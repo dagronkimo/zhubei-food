@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>竹北三餐・今天吃什麼</title>
+<meta name="theme-color" content="#FFFCF6">
+<meta name="description" content="竹北中央路189號 3 公里內的早餐・午餐・晚餐轉盤與一週三餐行程">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="竹北三餐">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta property="og:title" content="竹北~今天吃什麼?">
+<meta property="og:description" content="竹北中央路一帶 3 公里內的早餐・午餐・晚餐：轉盤、投票、揪團點餐與地圖">
+<meta property="og:image" content="https://dagronkimo.github.io/zhubei-food/icon-512.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Huninn&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--paper:#FFFCF6;--ink:#3E3A39;--coral:#F2A497;--yellow:#F6D27A;--sky:#A8D3E6;--green:#B9DAA5;--white:#FFFFFF;--line:3px solid var(--ink);--r:22px}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:"Huninn",system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit}button{font-family:inherit;color:var(--ink)}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px}
+main.wrap{padding-top:calc(64px + env(safe-area-inset-top))}
+section{scroll-margin-top:76px;padding:26px 0 6px}
+h2{font-size:1.32rem;font-weight:400;display:flex;align-items:center;gap:10px;margin-bottom:12px}
+h2 .dot{width:18px;height:18px;border:var(--line);border-radius:50%;flex:none}
+h3{font-weight:400}
+.card{background:var(--white);border:var(--line);border-radius:var(--r);box-shadow:0 4px 0 var(--ink)}
+.note{font-size:.88rem;opacity:.85;margin-bottom:12px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* nav */
+.nav{position:fixed;inset:0 0 auto 0;z-index:1000;background:var(--paper);border-bottom:var(--line);padding-top:env(safe-area-inset-top)}
+.nav .in{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:8px;padding:8px 12px;overflow-x:auto;scrollbar-width:none}
+.nav .in::-webkit-scrollbar{display:none}
+.logo{font-size:1.02rem;white-space:nowrap;display:flex;align-items:center;gap:6px;margin-right:4px}
+.logo svg{width:30px;height:30px}
+.nav a.lk{flex:none;text-decoration:none;font-size:.9rem;padding:4px 12px;border:var(--line);border-radius:999px;background:var(--white)}
+.nav a.lk.on{background:var(--yellow)}
+a:focus-visible,button:focus-visible,input:focus-visible+span,select:focus-visible{outline:3px dashed var(--ink);outline-offset:3px}
+
+/* hero */
+.hero{padding-top:18px}
+.hero-art{overflow:hidden;padding:0;background:#EAF5FA}
+.hero-art svg{display:block;width:100%;height:auto}
+.hero h1{font-size:1.7rem;font-weight:400;line-height:1.3;margin:18px 0 4px}
+.hero .sub{opacity:.8;font-size:.92rem}
+.count{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.count div{border:var(--line);border-radius:16px;text-align:center;padding:8px 2px 6px}
+.count b{display:block;font-size:1.6rem;font-weight:400;line-height:1.2;font-variant-numeric:tabular-nums}
+.count span{font-size:.8rem}
+.count div:nth-child(1){background:var(--coral)}.count div:nth-child(2){background:var(--yellow)}.count div:nth-child(3){background:var(--sky)}
+.count-msg{margin-top:8px;font-size:.92rem}
+.today-card{margin-top:14px;padding:12px 14px;display:flex;gap:12px;align-items:center;background:var(--white)}
+.today-card svg{width:64px;height:64px;flex:none}
+.today-card small{font-size:.8rem;opacity:.8}
+.today-card b{display:block;font-weight:400;font-size:1.12rem;line-height:1.3}
+
+/* pills / buttons */
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.pill{font-size:.85rem;padding:3px 12px;border:2.5px solid var(--ink);border-radius:999px;background:var(--white);cursor:pointer}
+.pill[aria-pressed="true"]{background:var(--yellow)}
+.btn{display:block;width:100%;font-size:1.1rem;padding:10px;border:var(--line);border-radius:18px;background:var(--coral);box-shadow:0 4px 0 var(--ink);cursor:pointer;margin-top:14px}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.btn:disabled{opacity:.5}
+.sbtn{font-size:.82rem;padding:2px 10px;border:2.5px solid var(--ink);border-radius:999px;background:var(--white);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.sbtn.y{background:var(--yellow)}.sbtn.g{background:var(--green)}.sbtn.c{background:var(--coral)}.sbtn.s{background:var(--sky)}
+.chkl{display:flex;align-items:center;gap:8px;font-size:.88rem;margin:6px 0;cursor:pointer}
+.chkl input{position:absolute;opacity:0;width:1px;height:1px}
+.chkl .box{width:22px;height:22px;border:var(--line);border-radius:7px;background:var(--white);display:grid;place-items:center;flex:none}
+.chkl .box svg{width:14px;height:14px;opacity:0}
+.chkl input:checked+.box{background:var(--yellow)}.chkl input:checked+.box svg{opacity:1}
+
+/* wheel */
+.wheel-card{padding:14px}
+.wheelbox{position:relative;width:100%;max-width:360px;margin:6px auto 0;aspect-ratio:1}
+.wheelbox canvas{width:100%;height:100%;display:block}
+.wheelbox .ptr{position:absolute;left:50%;top:-6px;width:40px;height:44px;transform:translateX(-50%);z-index:2}
+.hub{position:absolute;inset:0;margin:auto;width:76px;height:76px;border-radius:50%;background:var(--paper);border:var(--line);display:grid;place-items:center;font-size:1.1rem;cursor:pointer;box-shadow:0 3px 0 var(--ink)}
+.wcount{text-align:center;font-size:.85rem;margin-top:8px;opacity:.85}
+.res{margin-top:14px;padding:14px;display:none}
+.res.show{display:block}
+.res h3{font-size:1.25rem;line-height:1.3;margin:2px 0 6px}
+.res .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+
+/* days */
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 12px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;background:var(--white);border:var(--line);border-radius:18px;padding:6px 10px;text-align:center;cursor:pointer;min-width:62px;box-shadow:0 3px 0 var(--ink)}
+.tab b{display:block;font-weight:400;font-size:1.08rem;line-height:1.2}
+.tab small{font-size:.74rem}
+.tab[aria-selected="true"]{background:var(--coral);transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.tab.today small::after{content:"・今天"}
+.setrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.86rem;margin-bottom:12px}
+.setrow select{font-family:inherit;font-size:.86rem;border:2.5px solid var(--ink);border-radius:12px;background:var(--white);padding:2px 6px;color:var(--ink)}
+.dayhead{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:16px}
+.dayhead svg{width:76px;height:64px;flex:none}
+.dayhead h3{font-size:1.12rem;line-height:1.3}
+.dayhead p{font-size:.84rem}
+.tl{position:relative;padding-left:26px}
+.tl::before{content:"";position:absolute;left:9px;top:6px;bottom:6px;border-left:3px dashed var(--ink)}
+.it{position:relative;margin-bottom:14px}
+.it::before{content:"";position:absolute;left:-24px;top:14px;width:15px;height:15px;border:var(--line);border-radius:50%;background:var(--sky)}
+.it.eat::before{background:var(--coral)}.it.walk::before{background:var(--green)}.it.home::before{background:var(--yellow)}
+.it .card{padding:12px 14px}
+.it .time{font-size:.84rem;display:inline-block;background:var(--paper);border:2.5px solid var(--ink);border-radius:10px;padding:0 8px;margin-bottom:6px;font-variant-numeric:tabular-nums}
+.it h4{font-weight:400;font-size:1.06rem;display:flex;flex-wrap:wrap;align-items:center;gap:6px;line-height:1.35}
+.it p{font-size:.88rem;margin-top:4px}
+.it.mini .card{padding:8px 14px;background:var(--paper);box-shadow:none;border-style:dashed}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}
+.tg{font-size:.76rem;border:2.5px solid var(--ink);border-radius:999px;padding:0 9px;background:var(--white)}
+.warn{color:#b3412f}
+.alts{margin-top:10px;padding-top:8px;border-top:2.5px dashed #d8d2c8;font-size:.86rem}
+.alts .row{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:4px 0}
+.pop{animation:pop .55s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes pop{0%{transform:translateY(14px) scale(.96);opacity:0}60%{transform:translateY(-6px) scale(1.02);opacity:1}100%{transform:none;opacity:1}}
+.it.pop:nth-child(2){animation-delay:.05s}.it.pop:nth-child(3){animation-delay:.1s}.it.pop:nth-child(4){animation-delay:.15s}.it.pop:nth-child(5){animation-delay:.2s}
+
+/* map */
+.mtabs{display:flex;gap:6px;margin-bottom:10px}
+.mapcard{padding:0;overflow:hidden}
+#bookmap{display:block;width:100%;height:auto;background:#F6F1E6}
+#realmap{height:420px;display:none}
+.road{fill:none;stroke:#FFFFFF;stroke-linecap:round;stroke-linejoin:round}
+.roadedge{fill:none;stroke:var(--ink);stroke-linecap:round;stroke-linejoin:round}
+.rl{font-size:13px;fill:var(--ink);paint-order:stroke;stroke:#F6F1E6;stroke-width:5px}
+.pin{cursor:pointer}.pin circle{stroke:var(--ink);stroke-width:2.5}
+.pin text{font-size:11px;text-anchor:middle;dominant-baseline:central;fill:var(--ink);pointer-events:none}
+.pin.off{opacity:.3}.pin.catoff{opacity:.12}
+.pin.pick circle{stroke-width:3.5}
+.ring{fill:none;stroke:var(--ink);stroke-width:2.5;stroke-dasharray:4 4;animation:spin 6s linear infinite;transform-box:fill-box;transform-origin:center}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:.8rem;margin:10px 0}
+.legend i{display:inline-block;width:13px;height:13px;border:2.5px solid var(--ink);border-radius:50%;vertical-align:-2px;margin-right:4px}
+.mapinfo{padding:10px 14px;border-top:var(--line);font-size:.9rem;min-height:56px}
+.leaf-pin{width:26px;height:26px;border:2.5px solid #3E3A39;border-radius:50%;display:grid;place-items:center;font:12px "Huninn",sans-serif;color:#3E3A39}
+.leaf-pin.pick{width:32px;height:32px;border-width:3.5px;box-shadow:0 0 0 4px #FFFCF6,0 0 0 6px #3E3A39}
+.leaflet-container{font-family:"Huninn",sans-serif;background:#F6F1E6}
+
+/* list */
+.list{display:grid;gap:10px}
+.shop{padding:12px 14px;display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:start}
+.shop .ic{width:44px;height:44px;border:var(--line);border-radius:14px;display:grid;place-items:center}
+.shop .ic svg{width:34px;height:34px}
+.shop h4{font-weight:400;font-size:1.02rem;line-height:1.35}
+.shop .meta{font-size:.8rem;opacity:.85}
+.shop.out{opacity:.45}
+.shop .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.dish{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.dish span{font-size:.8rem;border:2.5px solid var(--ink);border-radius:12px;padding:1px 9px;background:var(--paper)}
+.dish span.hot{background:var(--yellow)}
+.sheet-bg{position:fixed;inset:0;background:rgba(62,58,57,.35);z-index:2000;display:none;align-items:flex-end;justify-content:center}
+.sheet-bg.show{display:flex}
+.sheet{width:100%;max-width:560px;max-height:86vh;overflow:auto;background:var(--paper);border:var(--line);border-bottom:0;border-radius:26px 26px 0 0;padding:16px 16px calc(24px + env(safe-area-inset-bottom));animation:sheetup .5s cubic-bezier(.3,1.5,.5,1) both}
+@keyframes sheetup{0%{transform:translateY(60%)}100%{transform:none}}
+.sheet .grab{width:48px;height:6px;border-radius:9px;background:var(--ink);opacity:.35;margin:0 auto 10px}
+.sheet .hd{display:flex;gap:12px;align-items:center}
+.sheet .hd .ic{width:58px;height:58px;border:var(--line);border-radius:18px;display:grid;place-items:center;flex:none}
+.sheet .hd .ic svg{width:44px;height:44px}
+.sheet h3{font-size:1.25rem;line-height:1.3}
+.sheet .box2{background:var(--white);border:var(--line);border-radius:18px;padding:12px 14px;margin-top:12px}
+.sheet .box2 h4{font-weight:400;font-size:.95rem;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.sheet ol{list-style:none;display:grid;gap:6px}
+.sheet ol li{display:flex;gap:8px;align-items:center;font-size:.95rem}
+.sheet ol li i{font-style:normal;width:24px;height:24px;border:2.5px solid var(--ink);border-radius:50%;display:grid;place-items:center;font-size:.75rem;flex:none;background:var(--paper)}
+.sheet ol li.hot i{background:var(--yellow)}
+.sheet .src{font-size:.78rem;opacity:.85;margin-top:10px;line-height:1.7}
+.sheet .x{position:absolute;right:14px;top:12px}
+.wx{margin-top:12px;padding:12px 14px;display:flex;gap:12px;align-items:center;background:#EAF5FA}
+.wx .em{font-size:2.2rem;line-height:1;flex:none;width:52px;height:52px;border:var(--line);border-radius:16px;background:var(--white);display:grid;place-items:center}
+.wx b{font-weight:400;font-size:1.05rem}.wx small{display:block;font-size:.82rem}
+.wxbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:.82rem;margin:-6px 0 12px}
+.rainy{background:var(--sky);border:2.5px solid var(--ink);border-radius:14px;padding:8px 12px;font-size:.86rem;margin-bottom:12px}
+.vb{font-size:.72rem;border:2px solid var(--ink);border-radius:999px;padding:0 7px;background:var(--green);white-space:nowrap}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stats div{border:var(--line);border-radius:16px;text-align:center;padding:8px 2px;background:var(--white)}
+.stats b{display:block;font-weight:400;font-size:1.5rem;line-height:1.2}
+.stats span{font-size:.78rem}
+.logs{display:grid;gap:10px}
+.logi{padding:10px 14px;display:grid;grid-template-columns:62px 1fr auto;gap:10px;align-items:center}
+.logi .dt{border:2.5px solid var(--ink);border-radius:12px;text-align:center;background:var(--yellow);padding:2px 0;line-height:1.2}
+.logi .dt b{display:block;font-weight:400;font-size:1.1rem}.logi .dt small{font-size:.7rem}
+.logi h4{font-weight:400;font-size:1rem;line-height:1.3}.logi p{font-size:.8rem;opacity:.85}
+.frm label{display:block;font-size:.88rem;margin-top:10px}
+.frm input[type=text],.frm input[type=date],.frm input[type=number],.frm select,.frm textarea{width:100%;font-family:inherit;font-size:.95rem;color:var(--ink);border:2.5px solid var(--ink);border-radius:12px;padding:6px 10px;background:var(--white);margin-top:4px}
+.frm textarea{min-height:70px}
+.frm .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.frm .days7{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.frm .days7 label{margin:0;display:flex;align-items:center;gap:2px;border:2px solid var(--ink);border-radius:10px;padding:1px 7px;font-size:.82rem;background:var(--white)}
+.frm .hint{font-size:.76rem;opacity:.8;margin-top:3px}
+.hearts button{font-size:1.4rem;background:none;border:0;cursor:pointer;padding:0 2px;filter:grayscale(1);opacity:.4}
+.hearts button.on{filter:none;opacity:1}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px}
+.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--paper);border-radius:999px;padding:8px 16px;font-size:.9rem;z-index:3000;display:none}
+.toast.show{display:block;animation:pop .45s cubic-bezier(.3,1.6,.5,1) both}
+.tag-new{font-size:.7rem;border:2px solid var(--ink);border-radius:999px;padding:0 6px;background:var(--coral)}
+.cdot{display:inline-block;width:12px;height:12px;border:2px solid var(--ink);border-radius:50%;margin-right:5px;vertical-align:-1px}
+.catp small{opacity:.7;font-size:.75rem}
+.catrow{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none}.catrow::-webkit-scrollbar{display:none}
+.catrow .pill{flex:none}
+.catgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.catcard{border:var(--line);border-radius:18px;padding:8px 4px 6px;text-align:center;cursor:pointer;background:var(--white);box-shadow:0 3px 0 var(--ink);font-family:inherit;color:var(--ink)}
+.catcard svg{width:40px;height:40px;display:block;margin:0 auto 2px}
+.catcard b{display:block;font-weight:400;font-size:.78rem;line-height:1.25}
+.catcard small{font-size:.72rem;opacity:.75}
+.catcard[aria-pressed="true"]{transform:translateY(2px);box-shadow:0 1px 0 var(--ink);outline:3px solid var(--ink);outline-offset:-1px}
+.catcard.all{background:var(--paper)}
+.grouph{display:flex;align-items:center;gap:8px;margin:14px 0 6px;font-size:1.02rem}
+.grouph .ic{width:34px;height:34px;border:2.5px solid var(--ink);border-radius:12px;display:grid;place-items:center}
+.grouph .ic svg{width:26px;height:26px}
+.grouph small{opacity:.7;font-size:.8rem}
+.legend button{font-family:inherit;color:var(--ink);background:none;border:0;cursor:pointer;font-size:.8rem;padding:2px 0;display:inline-flex;align-items:center}
+.legend button[aria-pressed="false"]{opacity:.35}
+.vmode{display:flex;gap:6px;margin:4px 0 8px}
+.os{font-size:.72rem;border:2px solid var(--ink);border-radius:999px;padding:0 7px;white-space:nowrap;vertical-align:1px}
+.os.open{background:var(--green)}.os.closing{background:var(--yellow)}.os.soon{background:var(--sky)}.os.off{background:#E9E4DA;opacity:.85}
+.install{margin-top:12px;padding:10px 14px;display:none;gap:10px;align-items:center;background:var(--yellow)}
+.install.show{display:flex}.install img{width:44px;height:44px;border-radius:12px;border:2.5px solid var(--ink)}
+.install div{flex:1;font-size:.86rem;line-height:1.4}
+.vopt{padding:10px 12px;display:grid;grid-template-columns:30px 1fr;gap:8px;align-items:center;cursor:pointer;position:relative;overflow:hidden}
+.vopt input{position:absolute;opacity:0}
+.vopt .ck{width:26px;height:26px;border:var(--line);border-radius:9px;background:var(--white);display:grid;place-items:center;font-size:.9rem}
+.vopt.sel{background:#FFF6DC}.vopt.sel .ck{background:var(--yellow)}
+.vopt h4{font-weight:400;font-size:.98rem;line-height:1.3}
+.vopt .bar{height:10px;border:2px solid var(--ink);border-radius:999px;background:var(--paper);margin-top:5px;overflow:hidden}
+.vopt .bar i{display:block;height:100%;background:var(--coral);transition:width .4s}
+.vopt small{font-size:.76rem;opacity:.85}
+.vopt.win{outline:3px solid var(--ink);background:#FFF0EC}
+.vgrid{display:grid;gap:8px;margin-top:10px}
+.vhead{padding:12px 14px}
+.vhead h3{font-size:1.15rem;line-height:1.3}
+.vmeta{font-size:.84rem;margin-top:4px}
+.mealbar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 14px}.mealbar a{border:var(--line);border-radius:16px;background:var(--white);text-align:center;padding:9px 4px;text-decoration:none;color:var(--ink);font-size:1rem;box-shadow:0 3px 0 var(--ink)}.mealbar a.on{background:var(--yellow);transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.views[hidden]{display:none}.views{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:8px 0 2px}.views span{border:2px solid var(--ink);border-radius:999px;background:var(--white);padding:2px 10px;font-size:.8rem}.views b{font-weight:400;color:#C9604F}
+.oqk{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.oqk button{font:inherit;font-size:.82rem;border:2px solid var(--ink);border-radius:999px;background:var(--white);padding:4px 10px;cursor:pointer}.oqk button.hot{background:#FFF0EC}
+.orow{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:1.5px dashed #E1DACE}
+.orow b{font-weight:400;font-size:.95rem}.orow input{grid-column:1/-1;font:inherit;font-size:.85rem;border:2px solid var(--ink);border-radius:10px;padding:5px 8px;background:var(--white)}
+.qty{display:flex;align-items:center;gap:4px}.qty button{width:30px;height:30px;border:2px solid var(--ink);border-radius:9px;background:var(--yellow);font:inherit;cursor:pointer}.qty span{min-width:20px;text-align:center}
+.oadd{display:grid;grid-template-columns:1fr auto;gap:6px;margin-top:8px}.oadd input{font:inherit;border:2px solid var(--ink);border-radius:10px;padding:6px 10px;background:var(--white)}
+.osum{font-size:.9rem}.osum li{list-style:none;padding:5px 0;border-bottom:1.5px dashed #E1DACE;display:flex;justify-content:space-between;gap:8px}.osum li b{font-weight:400}
+.osum h4{font-weight:400;font-size:.88rem;margin:10px 0 2px;opacity:.75}
+.pick-list{max-height:46vh;overflow:auto;border:2.5px solid var(--ink);border-radius:14px;background:var(--white);padding:4px 8px;margin-top:6px}
+.pick-list label{display:flex!important;gap:8px;align-items:center;margin:0!important;padding:6px 2px;border-bottom:1.5px dashed #E1DACE;font-size:.9rem}
+.pick-list label:last-child{border-bottom:0}
+.dchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.dchips button{font-family:inherit;color:var(--ink);font-size:.82rem;border:2.5px solid var(--ink);border-radius:12px;padding:1px 9px;background:var(--white);cursor:pointer}
+.dchips button[aria-pressed="true"]{background:var(--yellow)}
+.topd{display:grid;gap:6px;margin-top:6px}
+.topd div{display:flex;justify-content:space-between;gap:8px;font-size:.88rem;border-bottom:1.5px dashed #E1DACE;padding:3px 0}
+footer{text-align:center;font-size:.8rem;opacity:.8;padding:26px 0 calc(40px + env(safe-area-inset-bottom))}
+.ver{display:inline-block;border:2px solid var(--ink);border-radius:999px;padding:0 10px;margin-bottom:6px;background:var(--white)}
+
+/* animations */
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes steam{0%,100%{transform:translateY(0);opacity:.9}50%{transform:translateY(-5px);opacity:.5}}
+@keyframes drift{0%,100%{transform:translateX(0)}50%{transform:translateX(14px)}}
+@keyframes ride{0%,100%{transform:translateX(-26px)}50%{transform:translateX(26px)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes wiggle{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+.a-steam{animation:steam 2.4s ease-in-out infinite}.a-steam2{animation:steam 2.4s .8s ease-in-out infinite}
+.a-drift{animation:drift 9s ease-in-out infinite}.a-ride{animation:ride 7s ease-in-out infinite}
+.a-bob{animation:bob 2.2s ease-in-out infinite}.a-spin{animation:spin 30s linear infinite;transform-box:fill-box;transform-origin:center}
+.a-wig{animation:wiggle 2.6s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}}
+@media (min-width:600px){.hero h1{font-size:2rem}}
+</style><style>
+.now{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:12px 14px;margin-top:12px;background:#FFF6DC}
+.now .em,.meal .em{font-size:1.9rem}.now b,.meal b{display:block;font-weight:400;font-size:1.08rem}.now small,.meal small{display:block;font-size:.8rem;opacity:.85}
+.meals{display:grid;gap:10px}.meal{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 14px;text-decoration:none;color:var(--ink)}
+.meal.cur{background:#FFF0EC}.meal .go{font-size:1.6rem}
+.wk{padding:8px;overflow-x:auto}.wk table{width:100%;border-collapse:collapse;font-size:.84rem}.wk th,.wk td{padding:7px 5px;border-bottom:1.5px dashed #E1DACE;text-align:left;vertical-align:top}
+.wk thead th{font-weight:400;font-size:.82rem;white-space:nowrap}.wk tbody th{font-weight:400;white-space:nowrap}.wk tbody th small{display:block;font-size:.72rem;opacity:.7}
+.wk td a{color:var(--ink);text-decoration:none}.wk .emp{opacity:.55}.wk tr.td{background:#FFF6DC}
+</style>
+</head>
+<body>
+<nav class="nav" aria-label="主選單"><div class="in">
+ <span class="logo" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M6 20h28a14 12 0 0 1-28 0z" fill="#F6D27A" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/><path d="M10 20c4-3 6 2 10-1s6 2 10-1" fill="none" stroke="#3E3A39" stroke-width="2.5" stroke-linecap="round"/><path d="M24 6l-8 14M30 8l-10 12" stroke="#3E3A39" stroke-width="3" stroke-linecap="round"/></svg><a href="index.html" style="text-decoration:none;color:inherit">竹北三餐</a></span>
+ <a class="lk" href="#home">首頁</a><a class="lk" href="#today">今天三餐</a><a class="lk" href="breakfast.html">早餐</a><a class="lk" href="lunch.html">午餐</a><a class="lk" href="dinner.html">晚餐</a></div></nav>
+<main class="wrap">
+<section id="home" class="hero">
+ <div class="mealbar" role="navigation" aria-label="切換餐別"><a href="breakfast.html">🍳 早餐</a><a href="lunch.html">🍱 午餐</a><a href="dinner.html">🍲 晚餐</a></div>
+ <div class="card hero-art" aria-hidden="true">
+ <svg viewBox="0 0 360 210">
+  <rect width="360" height="210" fill="#EAF5FA"/>
+  <g class="a-spin"><circle cx="312" cy="40" r="17" fill="#F6D27A" stroke="#3E3A39" stroke-width="3"/>
+   <g stroke="#3E3A39" stroke-width="3" stroke-linecap="round"><path d="M312 12v-6M312 74v-6M284 40h-6M346 40h-6M292 20l-4-4M336 64l-4-4M292 60l-4 4M336 16l-4 4"/></g></g>
+  <g class="a-drift"><path d="M40 46a12 12 0 0 1 22-6 10 10 0 0 1 18 6 8 8 0 0 1-2 16H44a9 9 0 0 1-4-16z" fill="#FFF" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/></g>
+  <g class="a-drift" style="animation-delay:-4s"><path d="M178 30a9 9 0 0 1 16-4 8 8 0 0 1 13 5 6 6 0 0 1-1 12h-26a7 7 0 0 1-2-13z" fill="#FFF" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/></g>
+  <!-- 竹科 office buildings -->
+  <rect x="214" y="58" width="44" height="88" rx="6" fill="#A8D3E6" stroke="#3E3A39" stroke-width="3"/>
+  <g fill="#FFFCF6" stroke="#3E3A39" stroke-width="2"><rect x="222" y="68" width="10" height="10" rx="2"/><rect x="240" y="68" width="10" height="10" rx="2"/><rect x="222" y="86" width="10" height="10" rx="2"/><rect x="240" y="86" width="10" height="10" rx="2"/><rect x="222" y="104" width="10" height="10" rx="2"/><rect x="240" y="104" width="10" height="10" rx="2"/></g>
+  <rect x="262" y="82" width="56" height="64" rx="6" fill="#B9DAA5" stroke="#3E3A39" stroke-width="3"/>
+  <g fill="#FFFCF6" stroke="#3E3A39" stroke-width="2"><rect x="270" y="92" width="40" height="8" rx="3"/><rect x="270" y="108" width="40" height="8" rx="3"/><rect x="270" y="124" width="40" height="8" rx="3"/></g>
+  <text x="236" y="54" font-size="11" text-anchor="middle" fill="#3E3A39">竹北</text>
+  <!-- shop row -->
+  <rect x="20" y="96" width="70" height="50" rx="6" fill="#FFFCF6" stroke="#3E3A39" stroke-width="3"/>
+  <path d="M16 96h78l-6 14H22z" fill="#F2A497" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M32 96v14M48 96v14M64 96v14M80 96v14" stroke="#3E3A39" stroke-width="2"/>
+  <rect x="44" y="118" width="20" height="28" rx="4" fill="#F6D27A" stroke="#3E3A39" stroke-width="2.5"/>
+  <rect x="98" y="104" width="62" height="42" rx="6" fill="#FFFCF6" stroke="#3E3A39" stroke-width="3"/>
+  <path d="M94 104h70l-5 12H99z" fill="#F6D27A" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M110 104v12M124 104v12M138 104v12M152 104v12" stroke="#3E3A39" stroke-width="2"/>
+  <g class="a-wig"><rect x="110" y="122" width="14" height="22" rx="3" fill="#F2A497" stroke="#3E3A39" stroke-width="2.5"/><path d="M134 122h16v10h-16z" fill="#A8D3E6" stroke="#3E3A39" stroke-width="2.5"/></g>
+  <!-- street sign -->
+  <g class="a-wig" style="animation-duration:3.4s"><path d="M184 146v-50" stroke="#3E3A39" stroke-width="3"/><rect x="164" y="84" width="58" height="22" rx="7" fill="#B9DAA5" stroke="#3E3A39" stroke-width="3"/><text x="193" y="99" font-size="12" text-anchor="middle" fill="#3E3A39">中央路</text></g>
+  <!-- road -->
+  <rect x="0" y="146" width="360" height="64" fill="#F6F1E6"/>
+  <path d="M0 146h360" stroke="#3E3A39" stroke-width="3"/>
+  <path d="M10 178h30M70 178h30M130 178h30M190 178h30M250 178h30M310 178h30" stroke="#3E3A39" stroke-width="3" stroke-linecap="round"/>
+  <!-- scooter -->
+  <g class="a-ride"><g transform="translate(232 150)">
+   <circle cx="10" cy="40" r="8" fill="#FFF" stroke="#3E3A39" stroke-width="3"/><circle cx="46" cy="40" r="8" fill="#FFF" stroke="#3E3A39" stroke-width="3"/>
+   <path d="M4 34h44l-6-14H22l-4 14" fill="#F2A497" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/>
+   <path d="M44 20l4-14h6" fill="none" stroke="#3E3A39" stroke-width="3" stroke-linecap="round"/>
+   <circle cx="28" cy="2" r="7" fill="#F6D27A" stroke="#3E3A39" stroke-width="3"/>
+   <path d="M28 9v11" stroke="#3E3A39" stroke-width="3"/></g></g>
+  <!-- noodle bowl -->
+  <g class="a-bob"><g transform="translate(36 150)">
+   <path class="a-steam" d="M24 6c-5-6 5-10 0-16" fill="none" stroke="#3E3A39" stroke-width="2.5" stroke-linecap="round"/>
+   <path class="a-steam2" d="M40 6c-5-6 5-10 0-16" fill="none" stroke="#3E3A39" stroke-width="2.5" stroke-linecap="round"/>
+   <path d="M0 14h64a32 26 0 0 1-64 0z" fill="#F6D27A" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/>
+   <path d="M8 22c6-4 9 3 15-1s9 3 15-1 9 3 15-1" fill="none" stroke="#3E3A39" stroke-width="2.5" stroke-linecap="round"/>
+   <circle cx="44" cy="14" r="6" fill="#FFF" stroke="#3E3A39" stroke-width="2.5"/><circle cx="44" cy="14" r="2.5" fill="#F2A497"/>
+   <path d="M50 -10l-16 22M58 -6l-18 20" stroke="#3E3A39" stroke-width="3" stroke-linecap="round"/></g></g>
+ </svg>
+ </div>
+ <h1>竹北~今天吃什麼?</h1>
+ <p class="sub">以竹北中央路189號為中心 3 公里內｜早餐 <b>22</b>・午餐 <b>61</b>・晚餐 <b>68</b> 間｜Google 4.2 星以上</p>
+ <div class="views" id="views" hidden aria-live="polite"><span>👀 瀏覽 <b id="vwAll">–</b> 次</span><span>📅 今天 <b id="vwDay">–</b> 次</span></div>
+ <div class="card now" id="nowCard"></div>
+</section>
+<section id="today">
+ <h2><span class="dot" style="background:var(--coral)"></span>今天三餐</h2>
+ <p class="note">一打開就幫你配好今天的早餐、午餐、晚餐（當天那個時段一定有開）。按「🎲 三餐一起轉」重抽；想細挑就點進各餐的頁面，有轉盤、地圖、投票和揪團點餐。</p>
+ <div class="meals" id="meals"></div>
+ <div class="tags" style="margin-top:12px"><button class="btn" id="roll" style="flex:1">🎲 三餐一起轉</button></div>
+ <p class="hint" id="rollHint" style="margin-top:6px"></p>
+</section>
+<section id="week">
+ <h2><span class="dot" style="background:var(--yellow)"></span>這週三餐總表</h2>
+ <p class="note">點進各餐頁面後會自動排好一整週；這裡把三餐排在一起看。還沒排的格子點一下就會帶你去排。</p>
+ <div class="card wk" id="wk"></div>
+</section>
+<footer>
+ <span class="ver">版本 2026/11/10・竹北三餐初版</span><br>
+ 店家資料為 Google 地圖（2026 年 11 月）；早餐＝早上 8–9 點有開、午餐＝中午 12–13 點有開、晚餐＝晚上 6–7 點半有開<br>
+ 走路／騎車時間以直線距離估算，營業時間可能變動，出發前請再確認<br>瀏覽次數：透過 <a href="https://abacus.jasoncameron.dev/" target="_blank" rel="noopener">Abacus</a> 計數（同一支手機 30 分鐘內重複開只算一次）<br>
+</footer>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+const S={"b": [{"id": "ChIJYf83q4U3aDQRQju1OUylNLk", "n": "踢鐵板 韓式早午餐", "c": "韓式早午餐", "cat": "brunch", "r": 4.5, "v": 1219, "h": ["", "", "06:30–16:00", "06:30–16:00", "06:30–16:00", "06:30–16:00", "06:30–16:00"], "la": 24.836335, "ln": 120.998676, "d": []}, {"id": "ChIJtU3vhuU3aDQRzTcjksboKkc", "n": "Ollie lite 奧利早午餐", "c": "早午餐", "cat": "brunch", "r": 4.6, "v": 901, "h": ["07:00–13:30", "07:00–13:30", "07:00–13:30", "07:00–13:30", "07:00–13:30", "07:00–13:30", "07:00–13:30"], "la": 24.830248, "ln": 121.008589, "d": []}, {"id": "ChIJJwNrsL02aDQR4SbqOYchGkI", "n": "竹北鴨肉麵", "c": "麵食・小吃", "cat": "noodle", "r": 4.2, "v": 836, "h": ["", "", "08:00–19:00", "08:00–19:00", "08:00–19:00", "08:00–19:00", "08:00–19:00"], "la": 24.839969, "ln": 121.002781, "d": ["鴨肉"]}, {"id": "ChIJ46wfwes3aDQR7zFP0WM3Wbk", "n": "歐浮找餐 博愛店", "c": "早午餐", "cat": "brunch", "r": 4.5, "v": 836, "h": ["07:00–14:00", "07:00–14:00", "", "07:00–14:00", "07:00–14:00", "07:00–14:00", "07:00–14:00"], "la": 24.839328, "ln": 121.010538, "d": []}, {"id": "ChIJJ0_t5VI3aDQR1twUKJlQeAo", "n": "歐爹 竹北民權店", "c": "早午餐", "cat": "brunch", "r": 4.3, "v": 743, "h": ["00:00–00:00", "00:00–00:00", "00:00–00:00", "00:00–00:00", "00:00–00:00", "00:00–00:00", "00:00–00:00"], "la": 24.832947, "ln": 121.012202, "d": []}, {"id": "ChIJU9w2Bw43aDQRMgYZIsQpauk", "n": "sumdao café", "c": "早午餐咖啡", "cat": "brunch", "r": 4.4, "v": 585, "h": ["08:00–18:00", "08:00–18:00", "08:00–18:00", "08:00–18:00", "08:00–18:00", "08:00–18:00", "08:00–18:00"], "la": 24.821943, "ln": 121.008177, "d": ["咖啡", "三明治"]}, {"id": "ChIJ9bSdKj00aDQRtYDF789SfdQ", "n": "暖暖找餐", "c": "早午餐", "cat": "brunch", "r": 4.6, "v": 492, "h": ["06:00–11:00", "06:00–11:00", "06:00–11:00", "06:00–11:00", "06:00–11:00", "", ""], "la": 24.836282, "ln": 121.018858, "d": []}, {"id": "ChIJ3-CNL-o2aDQRDGWR40SalDk", "n": "三民路永和豆漿", "c": "豆漿・中式早餐", "cat": "bk", "r": 4.3, "v": 454, "h": ["", "06:00–10:30", "06:00–10:30", "06:00–10:30", "06:00–10:30", "06:00–11:00", "06:00–11:00"], "la": 24.832843, "ln": 121.015634, "d": ["豆漿", "小籠包"]}, {"id": "ChIJX4c7jnY3aDQR__byKqQjO0o", "n": "徐家小籠包", "c": "小籠包・包子", "cat": "bk", "r": 4.2, "v": 376, "h": ["05:00–11:00", "05:00–11:00", "05:00–11:00", "05:00–11:00", "05:00–11:00", "05:00–12:00", "05:00–12:00"], "la": 24.841628, "ln": 120.99924, "d": ["小籠包", "蛋餅"]}, {"id": "ChIJGSlKRJQ2aDQRBmucLwxO5HQ", "n": "朝司暮想肉排蛋土司", "c": "肉排蛋土司", "cat": "bk", "r": 4.4, "v": 303, "h": ["", "05:30–10:30", "05:30–10:30", "05:30–10:30", "05:30–10:30", "05:30–11:30", "05:30–11:30"], "la": 24.833514, "ln": 121.006771, "d": ["三明治"]}, {"id": "ChIJgcgQvb42aDQRROJZSd3R1O0", "n": "正香早餐店", "c": "中西式早餐", "cat": "bk", "r": 4.5, "v": 275, "h": ["05:00–10:50", "05:00–10:50", "05:00–10:50", "05:00–10:50", "05:00–10:50", "05:00–10:50", ""], "la": 24.841284, "ln": 121.005588, "d": ["甜點", "小籠包"]}, {"id": "ChIJK5_XdXs3aDQRwppsXR8BnJ8", "n": "鋤貳三明治", "c": "三明治", "cat": "bk", "r": 4.2, "v": 257, "h": ["08:00–16:30", "08:00–16:30", "08:00–16:30", "08:00–16:30", "08:00–16:30", "08:00–15:00", "08:00–15:00"], "la": 24.835908, "ln": 121.007723, "d": ["三明治", "甜點"]}, {"id": "ChIJCajB_gc3aDQRarNSgCfBKhY", "n": "歐浮找餐 光明店", "c": "早午餐", "cat": "brunch", "r": 4.5, "v": 251, "h": ["07:00–14:30", "07:00–14:30", "07:00–14:30", "07:00–14:30", "07:00–14:30", "07:00–14:30", "07:00–14:30"], "la": 24.829712, "ln": 121.009095, "d": ["三明治", "蛋餅"]}, {"id": "ChIJ-3ZjjPI2aDQRYZA-RFqzMvQ", "n": "玟玟早午餐", "c": "中西式早餐", "cat": "bk", "r": 4.4, "v": 245, "h": ["06:00–13:00", "06:00–13:00", "06:00–13:00", "06:00–13:00", "06:00–13:00", "06:00–13:00", ""], "la": 24.823675, "ln": 121.013107, "d": ["三明治", "蛋餅"]}, {"id": "ChIJCetz1-s2aDQRuwN0vSp9Bdo", "n": "樂好找餐 竹北店", "c": "中西式早餐", "cat": "bk", "r": 4.2, "v": 243, "h": ["06:00–13:00", "06:00–13:00", "", "06:00–13:00", "06:00–13:00", "06:00–13:00", "06:00–13:00"], "la": 24.831522, "ln": 121.016059, "d": ["蛋餅", "蘿蔔糕"]}, {"id": "ChIJj4gYqng3aDQRBla0beG1KDM", "n": "早安公雞 華興店", "c": "早午餐", "cat": "brunch", "r": 4.3, "v": 239, "h": ["06:00–13:00", "", "06:00–13:00", "06:00–13:00", "06:00–13:00", "06:30–14:00", "06:30–14:00"], "la": 24.837927, "ln": 121.000124, "d": ["蛋餅", "漢堡"]}, {"id": "ChIJUYGRwOo2aDQRLd1ufA9tcdU", "n": "9號飯糰", "c": "飯糰", "cat": "bk", "r": 4.2, "v": 185, "h": ["05:40–10:00", "05:40–10:00", "05:40–10:00", "05:40–10:00", "05:40–10:00", "", ""], "la": 24.834406, "ln": 121.011773, "d": ["飯糰", "燒餅油條"]}, {"id": "ChIJZ5cWssM3aDQRvEm0grCNuU8", "n": "Coffee&Egg 台元分舖", "c": "早午餐", "cat": "brunch", "r": 4.5, "v": 174, "h": ["06:30–13:45", "06:30–13:45", "06:30–13:45", "06:30–13:45", "06:30–13:45", "06:30–13:45", "06:30–13:45"], "la": 24.836261, "ln": 121.018901, "d": ["奶茶"]}, {"id": "ChIJ7xZdsYQ3aDQRausGGrGt4ms", "n": "樂巢 HOMING", "c": "早午餐", "cat": "brunch", "r": 4.5, "v": 148, "h": ["", "", "07:30–14:00", "07:30–14:00", "07:30–14:00", "08:00–15:00", "08:00–15:00"], "la": 24.842336, "ln": 121.012861, "d": ["定食", "飯糰"]}, {"id": "ChIJlWQ00uo2aDQRcqJPBXgmxwU", "n": "美+美早餐", "c": "中西式早餐", "cat": "bk", "r": 4.4, "v": 143, "h": ["06:00–12:00", "06:00–12:00", "06:00–12:00", "06:00–12:00", "06:00–12:00", "06:00–12:00", "06:00–12:00"], "la": 24.833856, "ln": 121.010861, "d": ["蛋餅", "漢堡"]}, {"id": "ChIJzW68Ed02aDQRTxrcnraCwBE", "n": "永和豆漿", "c": "豆漿・中式早餐", "cat": "bk", "r": 4.4, "v": 137, "h": ["05:30–10:00", "05:30–10:00", "05:30–10:00", "05:30–10:00", "05:30–10:00", "05:30–11:00", ""], "la": 24.834487, "ln": 121.024006, "d": ["豆漿", "蛋餅"]}, {"id": "ChIJL8BZd8E2aDQRdMnEcJdT_ZE", "n": "老李豆漿", "c": "豆漿・中式早餐", "cat": "bk", "r": 4.4, "v": 117, "h": ["05:00–10:00", "05:00–10:00", "05:00–10:00", "05:00–10:00", "05:00–10:00", "05:00–10:00", "05:00–10:00"], "la": 24.83782, "ln": 121.015549, "d": ["蛋餅", "豆漿"]}], "l": [{"id": "ChIJCwJ8-gI3aDQRh_4NSbdDKeQ", "n": "阿本家 竹北文和店", "c": "川味創意菜", "cat": "cn", "r": 4.8, "v": 6836, "h": ["11:30–15:00", "11:30–15:00", "11:30–15:00", "11:30–15:00", "11:30–15:00", "11:30–15:00", "11:30–15:00"], "la": 24.829969, "ln": 121.014533, "d": []}, {"id": "ChIJF5RXMew3aDQR3acjd6f4icQ", "n": "真涮吃到飽火鍋", "c": "火鍋吃到飽", "cat": "pot", "r": 4.8, "v": 6731, "h": ["11:30–21:30", "11:30–21:30", "11:30–21:30", "11:30–21:30", "11:30–21:30", "11:30–21:30", "11:30–21:30"], "la": 24.835091, "ln": 121.012087, "d": ["奶茶", "咖啡"]}, {"id": "ChIJX8eiFTo3aDQR-i8QXI9inRY", "n": "吃肉肉燒肉專門店", "c": "燒肉", "cat": "pot", "r": 4.5, "v": 2641, "h": ["11:30–16:00", "11:30–16:00", "11:30–16:00", "11:00–16:00", "11:00–16:00", "11:00–16:00", "11:00–16:00"], "la": 24.829101, "ln": 121.017409, "d": ["海鮮", "燒肉"]}, {"id": "ChIJ6znCtpQ2aDQRMTBcfdwG4Nc", "n": "文化城牛肉麵", "c": "牛肉麵", "cat": "noodle", "r": 4.2, "v": 2596, "h": ["11:00–14:00", "11:00–14:00", "11:00–14:00", "", "11:00–14:00", "11:00–21:00", "11:00–21:00"], "la": 24.832047, "ln": 121.010025, "d": ["牛肉麵", "湯頭"]}, {"id": "ChIJp0En-pI2aDQRKM36gD1MFNA", "n": "全家福客家餐廳", "c": "客家菜", "cat": "cn", "r": 4.4, "v": 2456, "h": ["11:30–14:00", "11:30–14:00", "11:30–14:00", "11:30–14:00", "11:30–14:00", "11:30–14:00", "11:30–14:00"], "la": 24.828153, "ln": 121.008103, "d": ["客家小炒", "熱炒"]}, {"id": "ChIJm8MEGJM2aDQRQoKkalg5JUg", "n": "心丼隱食堂", "c": "日式丼飯", "cat": "jp", "r": 4.4, "v": 2396, "h": ["11:30–14:20", "11:30–14:20", "11:30–14:20", "11:30–14:20", "11:30–14:20", "11:30–14:20", "11:30–14:20"], "la": 24.829458, "ln": 121.009291, "d": ["壽司", "海鮮"]}, {"id": "ChIJ38IG2KU3aDQRqTCGr97h2is", "n": "和平小館", "c": "中式家常菜", "cat": "cn", "r": 4.8, "v": 2386, "h": ["11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00"], "la": 24.828828, "ln": 121.00894, "d": []}, {"id": "ChIJpVR7a503aDQRRSMHlJIYoao", "n": "鵝子 竹北縣政店", "c": "鵝肉・海鮮丼", "cat": "jp", "r": 4.8, "v": 2305, "h": ["", "11:30–14:15", "11:30–14:15", "11:30–14:15", "11:30–14:15", "11:30–14:15", "11:30–14:15"], "la": 24.82658, "ln": 121.01604, "d": ["鵝肉"]}, {"id": "ChIJH9Gb3XQ3aDQRocFtKy_mNoE", "n": "Dambino 丹比諾", "c": "義大利麵・披薩", "cat": "west", "r": 4.4, "v": 2259, "h": ["11:30–14:20", "11:30–14:20", "11:30–14:20", "11:30–14:20", "11:30–14:20", "11:30–14:50", "11:30–14:50"], "la": 24.831474, "ln": 121.015514, "d": ["義大利麵", "披薩"]}, {"id": "ChIJkQzSS-k2aDQR27eXHGgSblA", "n": "頂廂園", "c": "麵食・中式", "cat": "noodle", "r": 4.2, "v": 2010, "h": ["", "", "11:30–14:00", "11:30–14:00", "11:30–14:00", "11:30–14:00", "11:30–14:00"], "la": 24.829421, "ln": 121.017506, "d": ["鬆餅", "乾麵"]}, {"id": "ChIJH6Lripc2aDQRwAZsVMZCJPw", "n": "翟九 竹北店", "c": "麵食・小吃", "cat": "noodle", "r": 4.3, "v": 1929, "h": ["11:00–20:00", "11:00–20:00", "11:00–20:00", "11:00–20:00", "11:00–20:00", "11:00–20:00", "11:00–20:00"], "la": 24.836018, "ln": 120.998408, "d": ["乾麵"]}, {"id": "ChIJawVu8OA3aDQRw3v3_jPqnRY", "n": "Good goal hotpot", "c": "火鍋", "cat": "pot", "r": 4.6, "v": 1874, "h": ["11:00–23:59", "11:00–23:59", "11:00–23:59", "11:00–23:59", "11:00–23:59", "11:00–23:59", "11:00–23:59"], "la": 24.824498, "ln": 121.014298, "d": []}, {"id": "ChIJOfTuMpM2aDQR-jUGQBaJwlU", "n": "慕特牛排 竹北店", "c": "牛排", "cat": "west", "r": 4.4, "v": 1844, "h": ["11:30–14:30", "11:30–14:30", "11:30–14:30", "11:30–14:30", "11:30–14:30", "11:30–22:00", "11:30–22:00"], "la": 24.828732, "ln": 121.01059, "d": []}, {"id": "ChIJ7UjrzH43aDQRmzbL-zBDR6M", "n": "Texas Roadhouse 德州鮮切牛排", "c": "美式牛排", "cat": "west", "r": 4.6, "v": 1833, "h": ["11:00–15:00", "11:00–15:00", "11:00–15:00", "11:00–15:00", "11:00–15:00", "11:00–22:00", "11:00–21:30"], "la": 24.819431, "ln": 121.021715, "d": ["牛排", "沙拉"]}, {"id": "ChIJL7iWATE3aDQRQOpJX4F2D0k", "n": "Next Stop+", "c": "港式餐廳", "cat": "cn", "r": 4.5, "v": 1672, "h": ["11:30–14:30", "11:30–14:30", "", "11:30–14:30", "11:30–14:30", "11:30–14:30", "11:30–14:30"], "la": 24.832506, "ln": 121.01022, "d": []}, {"id": "ChIJm-uyIog3aDQRKFvK-A7U5cE", "n": "T2 cafe 竹北店", "c": "早午餐・簡餐", "cat": "brunch", "r": 4.8, "v": 1643, "h": ["11:00–21:00", "11:00–21:00", "11:00–21:00", "11:00–21:00", "11:00–21:00", "11:00–21:00", "11:00–21:00"], "la": 24.827284, "ln": 121.008507, "d": ["漢堡", "沙拉"]}, {"id": "ChIJc6Xa8oo3aDQRr961XjNjOD4", "n": "竹間精緻鍋物 中華店", "c": "小火鍋", "cat": "pot", "r": 4.6, "v": 1617, "h": ["11:00–23:59", "11:00–23:59", "11:00–23:59", "11:00–23:59", "11:00–23:59", "11:00–23:59", "11:00–23:59"], "la": 24.837146, "ln": 121.004919, "d": []}, {"id": "ChIJH5L-p2c3aDQRCQGX19NsNvs", "n": "牛範生台式蒜香牛排", "c": "平價牛排", "cat": "west", "r": 4.6, "v": 1614, "h": ["11:30–14:30", "11:30–14:30", "11:30–14:30", "11:30–14:30", "11:30–14:30", "11:30–21:00", "11:30–21:00"], "la": 24.829912, "ln": 121.018153, "d": []}, {"id": "ChIJQa_O_e03aDQRtbXwSvAn5oQ", "n": "泉布苑鍋物 三民店", "c": "小火鍋", "cat": "pot", "r": 4.8, "v": 1389, "h": ["11:30–14:30", "11:30–14:30", "11:30–14:30", "11:30–14:30", "11:30–14:30", "11:30–21:30", "11:30–21:30"], "la": 24.832979, "ln": 121.013228, "d": ["湯頭", "飯糰"]}, {"id": "ChIJLwpsf_43aDQRowPVDecf3As", "n": "505 Thai 泰式料理", "c": "泰式", "cat": "asia", "r": 4.3, "v": 1252, "h": ["", "11:00–13:30", "11:00–13:30", "11:00–13:30", "11:00–13:30", "11:00–13:30", ""], "la": 24.838429, "ln": 121.005667, "d": ["咖哩"]}, {"id": "ChIJYf83q4U3aDQRQju1OUylNLk", "n": "踢鐵板 韓式早午餐", "c": "韓式早午餐", "cat": "brunch", "r": 4.5, "v": 1219, "h": ["", "", "06:30–16:00", "06:30–16:00", "06:30–16:00", "06:30–16:00", "06:30–16:00"], "la": 24.836335, "ln": 120.998676, "d": []}, {"id": "ChIJZ4_GNXw3aDQRPYcxHsk_9gk", "n": "燒肉馬爾地夫 竹北店", "c": "燒肉", "cat": "pot", "r": 4.9, "v": 1216, "h": ["", "", "", "", "", "11:30–15:00", "11:30–15:00"], "la": 24.830717, "ln": 121.014519, "d": ["燒肉"]}, {"id": "ChIJqRj9K2o3aDQRjlkdnn9g98w", "n": "鼎香麻辣燙・小火鍋", "c": "麻辣燙", "cat": "pot", "r": 4.6, "v": 1199, "h": ["10:30–21:00", "10:30–21:00", "10:30–21:00", "10:30–21:00", "10:30–21:00", "10:30–21:00", "10:30–21:00"], "la": 24.830311, "ln": 121.008576, "d": ["鴨肉"]}, {"id": "ChIJ81Nr4-s2aDQRp3kNX5Cst60", "n": "漁市大眾食堂", "c": "日式定食・生魚片丼", "cat": "jp", "r": 4.4, "v": 1169, "h": ["", "11:30–14:00", "11:30–14:00", "11:30–14:00", "11:30–14:00", "11:30–14:00", "11:30–14:00"], "la": 24.829722, "ln": 121.009186, "d": ["生魚片", "豬排"]}, {"id": "ChIJd3PTqa03aDQRvIYXB3-QKrc", "n": "金春喜韓廚 竹北遠百店", "c": "韓式", "cat": "asia", "r": 4.6, "v": 1135, "h": ["11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–22:00", "11:00–21:30"], "la": 24.822449, "ln": 121.023642, "d": []}, {"id": "ChIJpUO7_n83aDQRnITRw92qmxo", "n": "翰食堂", "c": "日式咖哩・定食", "cat": "jp", "r": 4.8, "v": 1131, "h": ["", "11:30–14:00", "11:30–14:00", "11:30–14:00", "11:30–14:00", "11:30–14:00", "11:30–14:00"], "la": 24.837981, "ln": 120.996702, "d": ["丼飯", "咖哩"]}, {"id": "ChIJz_RQ7-A3aDQRWGLgWv5pc2Y", "n": "Thai me a river", "c": "泰式", "cat": "asia", "r": 4.6, "v": 1100, "h": ["", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00"], "la": 24.831004, "ln": 121.012338, "d": ["便當"]}, {"id": "ChIJ5WnbUJI2aDQRdaZpOM3zrqQ", "n": "竹北天樂里冰室", "c": "港式茶餐廳", "cat": "cn", "r": 4.2, "v": 1003, "h": ["", "", "11:30–14:00", "11:30–14:00", "11:30–14:00", "11:30–14:30", "11:30–14:30"], "la": 24.828243, "ln": 121.007097, "d": []}, {"id": "ChIJtU3vhuU3aDQRzTcjksboKkc", "n": "Ollie lite 奧利早午餐", "c": "早午餐", "cat": "brunch", "r": 4.6, "v": 901, "h": ["07:00–13:30", "07:00–13:30", "07:00–13:30", "07:00–13:30", "07:00–13:30", "07:00–13:30", "07:00–13:30"], "la": 24.830248, "ln": 121.008589, "d": []}, {"id": "ChIJ7w-lIes3aDQR_BeKWLnw7nw", "n": "有籽義麵 文信店", "c": "義大利麵", "cat": "west", "r": 4.7, "v": 845, "h": ["11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–20:30", "11:00–20:30"], "la": 24.832566, "ln": 121.009956, "d": ["拉麵", "義大利麵"]}, {"id": "ChIJJwNrsL02aDQR4SbqOYchGkI", "n": "竹北鴨肉麵", "c": "麵食・小吃", "cat": "noodle", "r": 4.2, "v": 836, "h": ["", "", "08:00–19:00", "08:00–19:00", "08:00–19:00", "08:00–19:00", "08:00–19:00"], "la": 24.839969, "ln": 121.002781, "d": ["鴨肉"]}, {"id": "ChIJ46wfwes3aDQR7zFP0WM3Wbk", "n": "歐浮找餐 博愛店", "c": "早午餐", "cat": "brunch", "r": 4.5, "v": 836, "h": ["07:00–14:00", "07:00–14:00", "", "07:00–14:00", "07:00–14:00", "07:00–14:00", "07:00–14:00"], "la": 24.839328, "ln": 121.010538, "d": []}, {"id": "ChIJkcOyZVY3aDQRavB3PoLn270", "n": "食石燒肉 竹北縣政店", "c": "燒肉", "cat": "pot", "r": 4.8, "v": 749, "h": ["", "", "", "", "", "11:00–21:00", "11:00–21:00"], "la": 24.827686, "ln": 121.01679, "d": []}, {"id": "ChIJHQwnMOo2aDQRdouf9ibHQeg", "n": "Heart Pasta 心義大利麵", "c": "義大利麵", "cat": "west", "r": 4.4, "v": 748, "h": ["", "11:00–20:30", "11:00–20:30", "11:00–20:30", "11:00–20:30", "11:00–20:30", "11:00–20:30"], "la": 24.832822, "ln": 121.015717, "d": ["義大利麵", "定食"]}, {"id": "ChIJJ0_t5VI3aDQR1twUKJlQeAo", "n": "歐爹 竹北民權店", "c": "早午餐", "cat": "brunch", "r": 4.3, "v": 743, "h": ["00:00–00:00", "00:00–00:00", "00:00–00:00", "00:00–00:00", "00:00–00:00", "00:00–00:00", "00:00–00:00"], "la": 24.832947, "ln": 121.012202, "d": []}, {"id": "ChIJ7Y094wI3aDQRGDeW2OdDxrg", "n": "熱浪島南洋蔬食茶堂", "c": "南洋蔬食", "cat": "asia", "r": 4.7, "v": 742, "h": ["11:00–15:00", "11:00–15:00", "", "11:00–15:00", "11:00–15:00", "11:00–21:00", "11:00–21:00"], "la": 24.831342, "ln": 121.011386, "d": ["素食", "沙嗲"]}, {"id": "ChIJ2-AbGa83aDQRvTENAMmmSkI", "n": "呷粗飽快餐", "c": "便當快餐", "cat": "brunch", "r": 4.8, "v": 717, "h": ["11:00–13:30", "11:00–13:30", "11:00–13:30", "11:00–13:30", "11:00–13:30", "", ""], "la": 24.836851, "ln": 121.004902, "d": []}, {"id": "ChIJ-Vzo-QI3aDQRms967NZbWsA", "n": "金賞壽司", "c": "壽司", "cat": "jp", "r": 4.7, "v": 716, "h": ["11:30–13:30", "11:30–13:30", "11:30–13:30", "11:30–13:30", "11:30–13:30", "11:30–13:30", "11:30–13:30"], "la": 24.827008, "ln": 121.005421, "d": ["鹽烤魚", "牛排"]}, {"id": "ChIJYb_jlZo3aDQRM08wfR8-Xwc", "n": "拾年一刻 TRATTORIA", "c": "義式料理", "cat": "west", "r": 4.7, "v": 691, "h": ["11:30–20:00", "11:30–20:00", "11:30–20:00", "11:30–20:00", "11:30–20:00", "11:30–22:00", "11:30–22:00"], "la": 24.835875, "ln": 120.997182, "d": ["義大利麵", "海鮮"]}, {"id": "ChIJ7a88NwA3aDQRKuDmgBpBM5k", "n": "築山拉麵 中正東店", "c": "拉麵", "cat": "noodle", "r": 4.8, "v": 621, "h": ["11:30–13:30", "11:30–13:30", "11:30–13:30", "11:30–13:30", "11:30–13:30", "11:30–13:30", "11:30–13:30"], "la": 24.835304, "ln": 121.013192, "d": ["湯頭", "海鮮"]}, {"id": "ChIJU9w2Bw43aDQRMgYZIsQpauk", "n": "sumdao café", "c": "早午餐咖啡", "cat": "brunch", "r": 4.4, "v": 585, "h": ["08:00–18:00", "08:00–18:00", "08:00–18:00", "08:00–18:00", "08:00–18:00", "08:00–18:00", "08:00–18:00"], "la": 24.821943, "ln": 121.008177, "d": ["咖啡", "三明治"]}, {"id": "ChIJlxc1xEc3aDQRu6kLzURagaI", "n": "鵝子 竹北成功店", "c": "鵝肉・日式", "cat": "jp", "r": 4.6, "v": 569, "h": ["11:30–14:15", "", "11:30–14:15", "11:30–14:15", "11:30–14:15", "11:30–14:15", "11:30–14:15"], "la": 24.817462, "ln": 121.018567, "d": ["海鮮"]}, {"id": "ChIJu4wxjVU2aDQR1ldZ-I82s68", "n": "東小食 光明店", "c": "麵食・小吃", "cat": "noodle", "r": 4.2, "v": 565, "h": ["11:30–14:00", "11:30–14:00", "11:30–14:00", "11:30–14:00", "11:30–14:00", "11:30–14:00", "11:30–14:00"], "la": 24.82965, "ln": 121.018596, "d": ["鬆餅", "湯頭"]}, {"id": "ChIJDw9nhKo3aDQREb1Aeu110wg", "n": "天香蔬食", "c": "蔬食", "cat": "brunch", "r": 4.5, "v": 528, "h": ["", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00"], "la": 24.841624, "ln": 121.003808, "d": ["素食", "炒飯"]}, {"id": "ChIJZ0g0HJo2aDQRnY_OJzYEYbY", "n": "黑皮快炒 六路食堂", "c": "熱炒", "cat": "cn", "r": 4.2, "v": 525, "h": ["11:30–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00"], "la": 24.833405, "ln": 120.997454, "d": ["熱炒", "湯頭"]}, {"id": "ChIJDatF2G83aDQRlii5WXjdd6w", "n": "咖禾咖哩 博愛店", "c": "咖哩飯", "cat": "jp", "r": 4.6, "v": 514, "h": ["10:00–20:00", "10:00–20:00", "10:00–20:00", "10:00–20:00", "10:00–20:00", "10:00–20:30", "10:00–20:30"], "la": 24.834586, "ln": 121.007644, "d": ["咖哩", "豬排"]}, {"id": "ChIJGc2drpM3aDQR5OEr2gQ-5bQ", "n": "非晉餐廚 民權店", "c": "健康餐盒", "cat": "brunch", "r": 4.9, "v": 455, "h": ["11:00–14:30", "11:00–14:30", "11:00–14:30", "11:00–14:30", "11:00–14:30", "11:00–14:30", "11:00–14:30"], "la": 24.832236, "ln": 121.012023, "d": ["義大利麵"]}, {"id": "ChIJte9tN2s3aDQRuG31VWR7bYI", "n": "自由創炒", "c": "熱炒", "cat": "cn", "r": 4.3, "v": 455, "h": ["11:00–13:30", "11:00–13:30", "11:00–13:30", "11:00–13:30", "11:00–13:30", "11:00–13:30", "11:00–13:30"], "la": 24.83378, "ln": 121.011099, "d": ["海鮮", "炒飯"]}, {"id": "ChIJY-E2rEM1aDQRdGOdPyh7Pl8", "n": "剛好 Cucina 義式料理", "c": "義式料理", "cat": "west", "r": 4.8, "v": 443, "h": ["", "11:30–14:30", "", "11:30–14:30", "11:30–14:30", "", ""], "la": 24.830214, "ln": 121.00386, "d": ["義大利麵", "海鮮"]}, {"id": "ChIJ7d6mQHU3aDQRnYZlNjAkdxk", "n": "有飯食光 三民店", "c": "健康便當", "cat": "brunch", "r": 4.3, "v": 432, "h": ["11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00"], "la": 24.83307, "ln": 121.012556, "d": ["健康餐", "便當"]}, {"id": "ChIJ-Q4jp_03aDQRBUQSXC93EQA", "n": "豬鼻子韓式小食", "c": "韓式", "cat": "asia", "r": 4.5, "v": 429, "h": ["", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–15:00", "11:00–22:00", "11:00–21:30"], "la": 24.835933, "ln": 121.008872, "d": ["石鍋拌飯", "甜點"]}, {"id": "ChIJEcwkXJQ2aDQRAEYMW-03Un8", "n": "上坪麵食館 總店", "c": "麵食・小吃", "cat": "noodle", "r": 4.3, "v": 423, "h": ["11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", ""], "la": 24.832921, "ln": 121.007227, "d": ["餛飩"]}, {"id": "ChIJS6r1__A3aDQR5iIPpiqGp98", "n": "八廚職人弁当 光明店", "c": "便當", "cat": "brunch", "r": 4.7, "v": 422, "h": ["10:30–22:00", "10:30–22:00", "10:30–22:00", "10:30–22:00", "10:30–22:00", "10:30–22:00", "10:30–22:00"], "la": 24.830149, "ln": 121.00887, "d": ["燒肉", "雞排"]}, {"id": "ChIJAwIJXwA3aDQREKJiuDIEFRA", "n": "竹亭夕食", "c": "日式料理", "cat": "jp", "r": 4.6, "v": 370, "h": ["11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00"], "la": 24.831234, "ln": 121.014613, "d": ["生魚片", "壽司"]}, {"id": "ChIJKz1YEwA3aDQR-WmRSWrBKHE", "n": "麵容餃好 文信店", "c": "麵食・水餃", "cat": "noodle", "r": 4.2, "v": 356, "h": ["11:00–14:30", "11:00–14:30", "11:00–14:30", "11:00–14:30", "11:00–14:30", "11:00–14:30", "11:00–14:30"], "la": 24.831527, "ln": 121.015655, "d": ["水餃", "乾麵"]}, {"id": "ChIJA6QZrPs3aDQRfrjIl9KEEXA", "n": "奕家親", "c": "中式家常菜", "cat": "cn", "r": 4.5, "v": 350, "h": ["11:00–14:00", "11:00–14:00", "", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00"], "la": 24.838339, "ln": 121.007131, "d": ["健康餐"]}, {"id": "ChIJlyj4m_Y3aDQRjf33ndU5fsw", "n": "元立食堂", "c": "飯糰定食", "cat": "jp", "r": 4.7, "v": 339, "h": ["11:30–14:30", "11:30–14:30", "11:30–14:30", "11:30–14:30", "11:30–14:30", "11:30–20:30", "11:30–20:30"], "la": 24.827122, "ln": 121.008725, "d": ["飯糰", "定食"]}, {"id": "ChIJnd0U2Zk3aDQRg-tgbd5_-t8", "n": "佬法室早午餐", "c": "早午餐", "cat": "brunch", "r": 4.6, "v": 333, "h": ["", "", "09:00–16:00", "09:00–16:00", "09:00–16:00", "09:00–16:30", "09:00–16:30"], "la": 24.831448, "ln": 121.013008, "d": ["漢堡"]}, {"id": "ChIJcU8YhI83aDQRYeJH7BOV2cE", "n": "飯桌蔬食料理", "c": "蔬食", "cat": "brunch", "r": 4.6, "v": 328, "h": ["11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "11:00–14:00", "", ""], "la": 24.823113, "ln": 121.0129, "d": ["素食", "便當"]}, {"id": "ChIJd9Nr9YU3aDQRRTtpdqH5Ygg", "n": "草地囡仔複合式熱炒", "c": "熱炒", "cat": "cn", "r": 4.2, "v": 308, "h": ["", "", "", "", "", "11:30–14:00", "11:30–14:00"], "la": 24.828844, "ln": 121.026331, "d": ["熱炒", "海鮮"]}, {"id": "ChIJ4R0aQPQ3aDQRY9svjZe5dMM", "n": "柴堡 Shiba Burger", "c": "美式漢堡", "cat": "west", "r": 4.6, "v": 306, "h": ["11:00–14:00", "11:00–14:00", "", "11:00–14:00", "11:00–14:00", "11:00–15:00", "11:00–15:00"], "la": 24.83723, "ln": 121.009902, "d": ["漢堡", "沙拉"]}], "d": [{"id": "ChIJ4wxT1yg3aDQR7NK3Sw-7wnE", "n": "私嚐串燒 居酒屋", "c": "串燒居酒屋", "cat": "pot", "r": 4.9, "v": 7164, "h": ["18:00–23:59", "18:00–23:59", "18:00–23:59", "18:00–23:59", "18:00–23:59", "18:00–23:59", "18:00–23:59"], "la": 24.829653, "ln": 121.018572, "d": ["飯糰", "燒肉"]}, {"id": "ChIJCwJ8-gI3aDQRh_4NSbdDKeQ", "n": "阿本家 竹北文和店", "c": "川味創意菜", "cat": "cn", "r": 4.8, "v": 6836, "h": ["17:30–21:30", "17:30–21:30", "17:30–21:30", "17:30–21:30", "17:30–22:00", "17:30–22:00", "17:30–21:00"], "la": 24.829969, "ln": 121.014533, "d": []}, {"id": "ChIJF5RXMew3aDQR3acjd6f4icQ", "n": "真涮吃到飽火鍋", "c": "火鍋吃到飽", "cat": "pot", "r": 4.8, "v": 6731, "h": ["11:30–21:30", "11:30–21:30", "11:30–21:30", "11:30–21:30", "11:30–21:30", "11:30–21:30", "11:30–21:30"], "la": 24.835091, "ln": 121.012087, "d": ["奶茶", "咖啡"]}, {"id": "ChIJX8eiFTo3aDQR-i8QXI9inRY", "n": "吃肉肉燒肉專門店", "c": "燒肉", "cat": "pot", "r": 4.5, "v": 2641, "h": ["17:30–22:30", "17:30–22:30", "17:30–22:30", "17:00–22:00", "17:00–22:00", "17:00–22:00", "17:00–22:00"], "la": 24.829101, "ln": 121.017409, "d": ["海鮮", "燒肉"]}, {"id": "ChIJ6znCtpQ2aDQRMTBcfdwG4Nc", "n": "文化城牛肉麵", "c": "牛肉麵", "cat": "noodle", "r": 4.2, "v": 2596, "h": ["17:00–21:00", "17:00–21:00", "17:00–21:00", "", "17:00–21:00", "11:00–21:00", "11:00–21:00"], "la": 24.832047, "ln": 121.010025, "d": ["牛肉麵", "湯頭"]}, {"id": "ChIJp0En-pI2aDQRKM36gD1MFNA", "n": "全家福客家餐廳", "c": "客家菜", "cat": "cn", "r": 4.4, "v": 2456, "h": ["17:00–21:00", "17:00–21:00", "17:00–21:00", "17:00–21:00", "17:00–21:00", "17:00–21:00", "17:00–21:00"], "la": 24.828153, "ln": 121.008103, "d": ["客家小炒", "熱炒"]}, {"id": "ChIJm8MEGJM2aDQRQoKkalg5JUg", "n": "心丼隱食堂", "c": "日式丼飯", "cat": "jp", "r": 4.4, "v": 2396, "h": ["17:30–21:00", "17:30–21:00", "17:30–21:00", "17:30–21:00", "17:30–21:00", "17:30–21:00", "17:30–21:00"], "la": 24.829458, "ln": 121.009291, "d": ["壽司", "海鮮"]}, {"id": "ChIJ38IG2KU3aDQRqTCGr97h2is", "n": "和平小館", "c": "中式家常菜", "cat": "cn", "r": 4.8, "v": 2386, "h": ["17:00–21:00", "17:00–21:00", "17:00–21:00", "17:00–21:00", "17:00–21:00", "17:00–21:00", "17:00–21:00"], "la": 24.828828, "ln": 121.00894, "d": []}, {"id": "ChIJpVR7a503aDQRRSMHlJIYoao", "n": "鵝子 竹北縣政店", "c": "鵝肉・海鮮丼", "cat": "jp", "r": 4.8, "v": 2305, "h": ["", "17:15–20:45", "17:15–20:45", "17:15–20:45", "17:15–20:45", "17:15–20:45", "17:15–20:45"], "la": 24.82658, "ln": 121.01604, "d": ["鵝肉"]}, {"id": "ChIJH9Gb3XQ3aDQRocFtKy_mNoE", "n": "Dambino 丹比諾", "c": "義大利麵・披薩", "cat": "west", "r": 4.4, "v": 2259, "h": ["17:30–19:50", "17:30–19:50", "17:30–19:50", "17:30–19:50", "17:30–20:20", "17:30–20:20", "17:30–20:20"], "la": 24.831474, "ln": 121.015514, "d": ["義大利麵", "披薩"]}, {"id": "ChIJT1pM2Xo3aDQR6LlDZ3p6A0E", "n": "Skewers and beers", "c": "串燒酒吧", "cat": "pot", "r": 4.9, "v": 2089, "h": ["17:00–23:59", "17:00–23:59", "17:00–23:59", "17:00–23:59", "17:00–23:59", "17:00–23:59", "17:00–23:59"], "la": 24.823911, "ln": 121.025846, "d": ["啤酒", "海鮮"]}, {"id": "ChIJkQzSS-k2aDQR27eXHGgSblA", "n": "頂廂園", "c": "麵食・中式", "cat": "noodle", "r": 4.2, "v": 2010, "h": ["", "", "17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30"], "la": 24.829421, "ln": 121.017506, "d": ["鬆餅", "乾麵"]}, {"id": "ChIJH6Lripc2aDQRwAZsVMZCJPw", "n": "翟九 竹北店", "c": "麵食・小吃", "cat": "noodle", "r": 4.3, "v": 1929, "h": ["11:00–20:00", "11:00–20:00", "11:00–20:00", "11:00–20:00", "11:00–20:00", "11:00–20:00", "11:00–20:00"], "la": 24.836018, "ln": 120.998408, "d": ["乾麵"]}, {"id": "ChIJawVu8OA3aDQRw3v3_jPqnRY", "n": "Good goal hotpot", "c": "火鍋", "cat": "pot", "r": 4.6, "v": 1874, "h": ["11:00–23:59", "11:00–23:59", "11:00–23:59", "11:00–23:59", "11:00–23:59", "11:00–23:59", "11:00–23:59"], "la": 24.824498, "ln": 121.014298, "d": []}, {"id": "ChIJOfTuMpM2aDQR-jUGQBaJwlU", "n": "慕特牛排 竹北店", "c": "牛排", "cat": "west", "r": 4.4, "v": 1844, "h": ["17:00–22:00", "17:00–22:00", "17:00–22:00", "17:00–22:00", "17:00–22:00", "11:30–22:00", "11:30–22:00"], "la": 24.828732, "ln": 121.01059, "d": []}, {"id": "ChIJ7UjrzH43aDQRmzbL-zBDR6M", "n": "Texas Roadhouse 德州鮮切牛排", "c": "美式牛排", "cat": "west", "r": 4.6, "v": 1833, "h": ["17:00–21:30", "17:00–21:30", "17:00–21:30", "17:00–21:30", "17:00–22:00", "11:00–22:00", "11:00–21:30"], "la": 24.819431, "ln": 121.021715, "d": ["牛排", "沙拉"]}, {"id": "ChIJL7iWATE3aDQRQOpJX4F2D0k", "n": "Next Stop+", "c": "港式餐廳", "cat": "cn", "r": 4.5, "v": 1672, "h": ["17:00–20:30", "17:00–20:30", "", "17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30"], "la": 24.832506, "ln": 121.01022, "d": []}, {"id": "ChIJm-uyIog3aDQRKFvK-A7U5cE", "n": "T2 cafe 竹北店", "c": "早午餐・簡餐", "cat": "brunch", "r": 4.8, "v": 1643, "h": ["11:00–21:00", "11:00–21:00", "11:00–21:00", "11:00–21:00", "11:00–21:00", "11:00–21:00", "11:00–21:00"], "la": 24.827284, "ln": 121.008507, "d": ["漢堡", "沙拉"]}, {"id": "ChIJc6Xa8oo3aDQRr961XjNjOD4", "n": "竹間精緻鍋物 中華店", "c": "小火鍋", "cat": "pot", "r": 4.6, "v": 1617, "h": ["11:00–23:59", "11:00–23:59", "11:00–23:59", "11:00–23:59", "11:00–23:59", "11:00–23:59", "11:00–23:59"], "la": 24.837146, "ln": 121.004919, "d": []}, {"id": "ChIJH5L-p2c3aDQRCQGX19NsNvs", "n": "牛範生台式蒜香牛排", "c": "平價牛排", "cat": "west", "r": 4.6, "v": 1614, "h": ["17:00–21:00", "17:00–21:00", "17:00–21:00", "17:00–21:00", "17:00–21:00", "11:30–21:00", "11:30–21:00"], "la": 24.829912, "ln": 121.018153, "d": []}, {"id": "ChIJQa_O_e03aDQRtbXwSvAn5oQ", "n": "泉布苑鍋物 三民店", "c": "小火鍋", "cat": "pot", "r": 4.8, "v": 1389, "h": ["17:00–21:30", "17:00–21:30", "17:00–21:30", "17:00–21:30", "17:00–21:30", "11:30–21:30", "11:30–21:30"], "la": 24.832979, "ln": 121.013228, "d": ["湯頭", "飯糰"]}, {"id": "ChIJLwpsf_43aDQRowPVDecf3As", "n": "505 Thai 泰式料理", "c": "泰式", "cat": "asia", "r": 4.3, "v": 1252, "h": ["", "17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30", ""], "la": 24.838429, "ln": 121.005667, "d": ["咖哩"]}, {"id": "ChIJXUqvSmM3aDQRQjggcWgtIPY", "n": "燒夜串燒 竹北店", "c": "串燒", "cat": "pot", "r": 4.9, "v": 1231, "h": ["17:30–23:59", "17:30–23:59", "17:30–23:59", "17:30–23:59", "17:30–23:59", "17:30–23:59", "17:30–23:59"], "la": 24.834553, "ln": 121.007612, "d": ["水餃", "串燒"]}, {"id": "ChIJZ4_GNXw3aDQRPYcxHsk_9gk", "n": "燒肉馬爾地夫 竹北店", "c": "燒肉", "cat": "pot", "r": 4.9, "v": 1216, "h": ["17:30–23:30", "17:30–23:30", "17:30–23:30", "17:30–23:30", "17:30–23:30", "17:30–23:30", "17:30–23:30"], "la": 24.830717, "ln": 121.014519, "d": ["燒肉"]}, {"id": "ChIJqRj9K2o3aDQRjlkdnn9g98w", "n": "鼎香麻辣燙・小火鍋", "c": "麻辣燙", "cat": "pot", "r": 4.6, "v": 1199, "h": ["10:30–21:00", "10:30–21:00", "10:30–21:00", "10:30–21:00", "10:30–21:00", "10:30–21:00", "10:30–21:00"], "la": 24.830311, "ln": 121.008576, "d": ["鴨肉"]}, {"id": "ChIJ81Nr4-s2aDQRp3kNX5Cst60", "n": "漁市大眾食堂", "c": "日式定食・生魚片丼", "cat": "jp", "r": 4.4, "v": 1169, "h": ["", "17:30–20:00", "17:30–20:00", "17:30–20:00", "17:30–20:00", "17:30–21:00", "17:30–21:00"], "la": 24.829722, "ln": 121.009186, "d": ["生魚片", "豬排"]}, {"id": "ChIJd3PTqa03aDQRvIYXB3-QKrc", "n": "金春喜韓廚 竹北遠百店", "c": "韓式", "cat": "asia", "r": 4.6, "v": 1135, "h": ["17:00–21:30", "17:00–21:30", "17:00–21:30", "17:00–21:30", "17:00–22:00", "11:00–22:00", "11:00–21:30"], "la": 24.822449, "ln": 121.023642, "d": []}, {"id": "ChIJpUO7_n83aDQRnITRw92qmxo", "n": "翰食堂", "c": "日式咖哩・定食", "cat": "jp", "r": 4.8, "v": 1131, "h": ["", "17:30–21:00", "17:30–21:00", "17:30–21:00", "17:30–21:00", "17:30–21:00", "17:30–21:00"], "la": 24.837981, "ln": 120.996702, "d": ["丼飯", "咖哩"]}, {"id": "ChIJz_RQ7-A3aDQRWGLgWv5pc2Y", "n": "Thai me a river", "c": "泰式", "cat": "asia", "r": 4.6, "v": 1100, "h": ["", "17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30"], "la": 24.831004, "ln": 121.012338, "d": ["便當"]}, {"id": "ChIJ5WnbUJI2aDQRdaZpOM3zrqQ", "n": "竹北天樂里冰室", "c": "港式茶餐廳", "cat": "cn", "r": 4.2, "v": 1003, "h": ["", "", "17:00–21:00", "17:00–21:00", "17:00–21:00", "17:00–21:00", "17:00–21:00"], "la": 24.828243, "ln": 121.007097, "d": []}, {"id": "ChIJ7w-lIes3aDQR_BeKWLnw7nw", "n": "有籽義麵 文信店", "c": "義大利麵", "cat": "west", "r": 4.7, "v": 845, "h": ["17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30", "11:00–20:30", "11:00–20:30"], "la": 24.832566, "ln": 121.009956, "d": ["拉麵", "義大利麵"]}, {"id": "ChIJW_QEmSA3aDQRDzexgAhj7ME", "n": "竹北野火碳烤牛排", "c": "碳烤牛排", "cat": "west", "r": 4.3, "v": 840, "h": ["17:00–22:00", "17:00–22:00", "17:00–22:00", "17:00–22:00", "17:00–22:30", "17:00–22:30", "17:00–22:00"], "la": 24.830419, "ln": 121.02632, "d": ["牛排"]}, {"id": "ChIJ--6EKOYeaDQRNPphJm-gME0", "n": "帝王食補薑母鴨 縣府店", "c": "薑母鴨", "cat": "pot", "r": 4.5, "v": 750, "h": ["15:00–23:59", "15:00–23:59", "15:00–23:59", "15:00–23:59", "15:00–23:59", "15:00–23:59", "15:00–23:59"], "la": 24.828015, "ln": 121.008296, "d": ["鴨肉"]}, {"id": "ChIJkcOyZVY3aDQRavB3PoLn270", "n": "食石燒肉 竹北縣政店", "c": "燒肉", "cat": "pot", "r": 4.8, "v": 749, "h": ["", "17:00–21:00", "17:00–21:00", "17:00–21:00", "17:00–21:00", "11:00–21:00", "11:00–21:00"], "la": 24.827686, "ln": 121.01679, "d": []}, {"id": "ChIJHQwnMOo2aDQRdouf9ibHQeg", "n": "Heart Pasta 心義大利麵", "c": "義大利麵", "cat": "west", "r": 4.4, "v": 748, "h": ["", "11:00–20:30", "11:00–20:30", "11:00–20:30", "11:00–20:30", "11:00–20:30", "11:00–20:30"], "la": 24.832822, "ln": 121.015717, "d": ["義大利麵", "定食"]}, {"id": "ChIJJ0_t5VI3aDQR1twUKJlQeAo", "n": "歐爹 竹北民權店", "c": "早午餐", "cat": "brunch", "r": 4.3, "v": 743, "h": ["00:00–00:00", "00:00–00:00", "00:00–00:00", "00:00–00:00", "00:00–00:00", "00:00–00:00", "00:00–00:00"], "la": 24.832947, "ln": 121.012202, "d": []}, {"id": "ChIJ7Y094wI3aDQRGDeW2OdDxrg", "n": "熱浪島南洋蔬食茶堂", "c": "南洋蔬食", "cat": "asia", "r": 4.7, "v": 742, "h": ["17:00–21:00", "17:00–21:00", "", "17:00–21:00", "17:00–21:00", "11:00–21:00", "11:00–21:00"], "la": 24.831342, "ln": 121.011386, "d": ["素食", "沙嗲"]}, {"id": "ChIJ2-AbGa83aDQRvTENAMmmSkI", "n": "呷粗飽快餐", "c": "便當快餐", "cat": "brunch", "r": 4.8, "v": 717, "h": ["17:00–19:30", "17:00–19:30", "17:00–19:30", "17:00–19:30", "17:00–19:30", "", ""], "la": 24.836851, "ln": 121.004902, "d": []}, {"id": "ChIJ-Vzo-QI3aDQRms967NZbWsA", "n": "金賞壽司", "c": "壽司", "cat": "jp", "r": 4.7, "v": 716, "h": ["17:30–20:30", "17:30–20:30", "17:30–20:30", "17:30–20:30", "17:30–20:30", "17:30–20:30", "17:30–20:30"], "la": 24.827008, "ln": 121.005421, "d": ["鹽烤魚", "牛排"]}, {"id": "ChIJYb_jlZo3aDQRM08wfR8-Xwc", "n": "拾年一刻 TRATTORIA", "c": "義式料理", "cat": "west", "r": 4.7, "v": 691, "h": ["11:30–20:00", "11:30–20:00", "11:30–20:00", "11:30–20:00", "11:30–20:00", "11:30–22:00", "11:30–22:00"], "la": 24.835875, "ln": 120.997182, "d": ["義大利麵", "海鮮"]}, {"id": "ChIJ7a88NwA3aDQRKuDmgBpBM5k", "n": "築山拉麵 中正東店", "c": "拉麵", "cat": "noodle", "r": 4.8, "v": 621, "h": ["17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30"], "la": 24.835304, "ln": 121.013192, "d": ["湯頭", "海鮮"]}, {"id": "ChIJA5y_rsU3aDQRGqd7ncuDD8Y", "n": "竹北霸味羊肉爐", "c": "羊肉爐", "cat": "pot", "r": 4.7, "v": 607, "h": ["16:00–23:59", "16:00–23:59", "16:00–23:59", "16:00–23:59", "16:00–23:59", "16:00–23:59", "16:00–23:59"], "la": 24.843289, "ln": 121.013804, "d": ["羊肉爐", "鴨肉"]}, {"id": "ChIJlxc1xEc3aDQRu6kLzURagaI", "n": "鵝子 竹北成功店", "c": "鵝肉・日式", "cat": "jp", "r": 4.6, "v": 569, "h": ["17:15–20:45", "", "17:15–20:45", "17:15–20:45", "17:15–20:45", "17:15–20:45", "17:15–20:45"], "la": 24.817462, "ln": 121.018567, "d": ["海鮮"]}, {"id": "ChIJu4wxjVU2aDQR1ldZ-I82s68", "n": "東小食 光明店", "c": "麵食・小吃", "cat": "noodle", "r": 4.2, "v": 565, "h": ["17:30–20:30", "17:30–20:30", "17:30–20:30", "17:30–20:30", "17:30–20:30", "17:30–20:30", "17:30–20:30"], "la": 24.82965, "ln": 121.018596, "d": ["鬆餅", "湯頭"]}, {"id": "ChIJDw9nhKo3aDQREb1Aeu110wg", "n": "天香蔬食", "c": "蔬食", "cat": "brunch", "r": 4.5, "v": 528, "h": ["", "17:00–20:00", "17:00–20:00", "17:00–20:00", "17:00–20:00", "17:00–20:00", "17:00–20:00"], "la": 24.841624, "ln": 121.003808, "d": ["素食", "炒飯"]}, {"id": "ChIJZ0g0HJo2aDQRnY_OJzYEYbY", "n": "黑皮快炒 六路食堂", "c": "熱炒", "cat": "cn", "r": 4.2, "v": 525, "h": ["17:00–21:00", "17:00–22:00", "17:00–22:00", "17:00–22:00", "17:00–22:00", "17:00–22:00", "17:00–21:00"], "la": 24.833405, "ln": 120.997454, "d": ["熱炒", "湯頭"]}, {"id": "ChIJDatF2G83aDQRlii5WXjdd6w", "n": "咖禾咖哩 博愛店", "c": "咖哩飯", "cat": "jp", "r": 4.6, "v": 514, "h": ["10:00–20:00", "10:00–20:00", "10:00–20:00", "10:00–20:00", "10:00–20:00", "10:00–20:30", "10:00–20:30"], "la": 24.834586, "ln": 121.007644, "d": ["咖哩", "豬排"]}, {"id": "ChIJGc2drpM3aDQR5OEr2gQ-5bQ", "n": "非晉餐廚 民權店", "c": "健康餐盒", "cat": "brunch", "r": 4.9, "v": 455, "h": ["16:30–20:00", "16:30–20:00", "16:30–20:00", "16:30–20:00", "16:30–20:00", "16:30–20:00", "16:30–20:00"], "la": 24.832236, "ln": 121.012023, "d": ["義大利麵"]}, {"id": "ChIJte9tN2s3aDQRuG31VWR7bYI", "n": "自由創炒", "c": "熱炒", "cat": "cn", "r": 4.3, "v": 455, "h": ["16:00–20:30", "16:00–20:30", "16:00–20:30", "16:00–20:30", "16:00–20:30", "16:00–20:30", "16:00–20:30"], "la": 24.83378, "ln": 121.011099, "d": ["海鮮", "炒飯"]}, {"id": "ChIJY-E2rEM1aDQRdGOdPyh7Pl8", "n": "剛好 Cucina 義式料理", "c": "義式料理", "cat": "west", "r": 4.8, "v": 443, "h": ["", "17:00–20:30", "", "17:00–20:30", "17:00–20:30", "", ""], "la": 24.830214, "ln": 121.00386, "d": ["義大利麵", "海鮮"]}, {"id": "ChIJZYS2_qQ9aTQRBL46inYd5bY", "n": "帝王食補薑母鴨 竹北店", "c": "薑母鴨", "cat": "pot", "r": 4.4, "v": 439, "h": ["16:00–23:59", "16:00–23:59", "16:00–23:59", "16:00–23:59", "16:00–23:59", "16:00–23:59", "16:00–23:59"], "la": 24.835286, "ln": 121.01271, "d": ["鴨肉", "薑母鴨"]}, {"id": "ChIJh_T3_Oo2aDQRwQ40EykWmQ8", "n": "思香枝串燒專賣店", "c": "串燒", "cat": "pot", "r": 4.4, "v": 436, "h": ["17:30–23:59", "17:30–23:59", "", "17:30–23:59", "17:30–23:59", "17:30–23:59", "17:30–23:59"], "la": 24.833087, "ln": 121.012898, "d": ["燒肉", "串燒"]}, {"id": "ChIJ7d6mQHU3aDQRnYZlNjAkdxk", "n": "有飯食光 三民店", "c": "健康便當", "cat": "brunch", "r": 4.3, "v": 432, "h": ["16:30–20:00", "16:30–20:00", "16:30–20:00", "16:30–20:00", "16:30–20:00", "16:30–20:00", "16:30–20:00"], "la": 24.83307, "ln": 121.012556, "d": ["健康餐", "便當"]}, {"id": "ChIJ-Q4jp_03aDQRBUQSXC93EQA", "n": "豬鼻子韓式小食", "c": "韓式", "cat": "asia", "r": 4.5, "v": 429, "h": ["", "16:45–21:30", "16:45–21:30", "16:45–21:30", "16:30–22:00", "11:00–22:00", "11:00–21:30"], "la": 24.835933, "ln": 121.008872, "d": ["石鍋拌飯", "甜點"]}, {"id": "ChIJEcwkXJQ2aDQRAEYMW-03Un8", "n": "上坪麵食館 總店", "c": "麵食・小吃", "cat": "noodle", "r": 4.3, "v": 423, "h": ["17:00–20:00", "17:00–20:00", "17:00–20:00", "17:00–20:00", "17:00–20:00", "", ""], "la": 24.832921, "ln": 121.007227, "d": ["餛飩"]}, {"id": "ChIJS6r1__A3aDQR5iIPpiqGp98", "n": "八廚職人弁当 光明店", "c": "便當", "cat": "brunch", "r": 4.7, "v": 422, "h": ["10:30–22:00", "10:30–22:00", "10:30–22:00", "10:30–22:00", "10:30–22:00", "10:30–22:00", "10:30–22:00"], "la": 24.830149, "ln": 121.00887, "d": ["燒肉", "雞排"]}, {"id": "ChIJX4c7jnY3aDQR__byKqQjO0o", "n": "徐家小籠包", "c": "小籠包・包子", "cat": "bk", "r": 4.2, "v": 376, "h": ["17:00–22:00", "17:00–22:00", "17:00–22:00", "17:00–22:00", "17:00–22:00", "", ""], "la": 24.841628, "ln": 120.99924, "d": ["小籠包", "蛋餅"]}, {"id": "ChIJAwIJXwA3aDQREKJiuDIEFRA", "n": "竹亭夕食", "c": "日式料理", "cat": "jp", "r": 4.6, "v": 370, "h": ["16:30–21:00", "16:30–21:00", "16:30–21:00", "16:30–21:00", "16:30–21:00", "16:30–21:00", "16:30–21:00"], "la": 24.831234, "ln": 121.014613, "d": ["生魚片", "壽司"]}, {"id": "ChIJKz1YEwA3aDQR-WmRSWrBKHE", "n": "麵容餃好 文信店", "c": "麵食・水餃", "cat": "noodle", "r": 4.2, "v": 356, "h": ["17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30"], "la": 24.831527, "ln": 121.015655, "d": ["水餃", "乾麵"]}, {"id": "ChIJA6QZrPs3aDQRfrjIl9KEEXA", "n": "奕家親", "c": "中式家常菜", "cat": "cn", "r": 4.5, "v": 350, "h": ["17:00–20:30", "17:00–20:30", "", "17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30"], "la": 24.838339, "ln": 121.007131, "d": ["健康餐"]}, {"id": "ChIJ21Jx1Lw2aDQRyZWEVPvN1n0", "n": "阿力香雞排 中正西路店", "c": "雞排・炸物", "cat": "cn", "r": 4.6, "v": 349, "h": ["", "15:30–23:00", "15:30–23:00", "15:30–23:00", "15:30–23:30", "15:30–23:30", ""], "la": 24.841844, "ln": 120.998839, "d": ["雞排", "天婦羅"]}, {"id": "ChIJXcEUgec2aDQRet70KE34x9A", "n": "三年二班 羊肉爐薑母鴨", "c": "羊肉爐", "cat": "pot", "r": 4.3, "v": 340, "h": ["16:00–23:00", "16:00–23:00", "16:00–23:00", "16:00–23:00", "16:00–23:00", "16:00–23:00", ""], "la": 24.832614, "ln": 121.024482, "d": ["羊肉爐", "鴨肉"]}, {"id": "ChIJlyj4m_Y3aDQRjf33ndU5fsw", "n": "元立食堂", "c": "飯糰定食", "cat": "jp", "r": 4.7, "v": 339, "h": ["17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30", "17:00–20:30", "11:30–20:30", "11:30–20:30"], "la": 24.827122, "ln": 121.008725, "d": ["飯糰", "定食"]}, {"id": "ChIJG2Chp5U2aDQR2T9r7OBLhXg", "n": "大新竹營養三明治", "c": "炸三明治・宵夜", "cat": "bk", "r": 4.9, "v": 337, "h": ["13:00–22:30", "13:00–22:30", "13:00–22:30", "13:00–22:30", "13:00–22:30", "13:00–22:30", "13:00–22:30"], "la": 24.83511, "ln": 121.00769, "d": []}, {"id": "ChIJwRTt44o3aDQRuigEZyzdD7Y", "n": "小屋台", "c": "日式居酒屋", "cat": "pot", "r": 4.8, "v": 328, "h": ["", "18:00–23:59", "18:00–23:59", "18:00–23:59", "18:00–23:59", "18:00–23:59", "18:00–23:59"], "la": 24.84284, "ln": 120.994066, "d": ["海鮮", "咖哩"]}, {"id": "ChIJcU8YhI83aDQRYeJH7BOV2cE", "n": "飯桌蔬食料理", "c": "蔬食", "cat": "brunch", "r": 4.6, "v": 328, "h": ["16:30–20:00", "16:30–20:00", "16:30–20:00", "16:30–20:00", "16:30–20:00", "", ""], "la": 24.823113, "ln": 121.0129, "d": ["素食", "便當"]}, {"id": "ChIJd9Nr9YU3aDQRRTtpdqH5Ygg", "n": "草地囡仔複合式熱炒", "c": "熱炒", "cat": "cn", "r": 4.2, "v": 308, "h": ["17:30–23:00", "17:30–23:00", "17:30–23:00", "17:30–23:00", "17:30–22:30", "17:30–22:30", "17:30–22:30"], "la": 24.828844, "ln": 121.026331, "d": ["熱炒", "海鮮"]}, {"id": "ChIJ4R0aQPQ3aDQRY9svjZe5dMM", "n": "柴堡 Shiba Burger", "c": "美式漢堡", "cat": "west", "r": 4.6, "v": 306, "h": ["17:00–20:00", "17:00–20:00", "", "17:00–20:00", "17:00–21:00", "17:00–21:00", "17:00–20:00"], "la": 24.83723, "ln": 121.009902, "d": ["漢堡", "沙拉"]}]};
+const C=[24.838273,121.000858],MEALS={b:{n:"早餐",e:"🍳",f:"breakfast.html",t:[5*60,10*60+30]},l:{n:"午餐",e:"🍱",f:"lunch.html",t:[10*60+30,15*60]},d:{n:"晚餐",e:"🍲",f:"dinner.html",t:[15*60,24*60]}};
+const DAYS=["一","二","三","四","五","六","日"],$=s=>document.querySelector(s);
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const now=new Date(),dow=(now.getDay()+6)%7,mon=new Date(now);mon.setHours(0,0,0,0);mon.setDate(mon.getDate()-dow);
+const week=[0,1,2,3,4,5,6].map(i=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return{i,key:ymd(d),label:`${d.getMonth()+1}/${d.getDate()}`}});
+const today=week[dow].key,MK=week[0].key;
+const dist=x=>Math.round(Math.hypot((x.la-C[0])*111000,(x.ln-C[1])*101300)/50)*50;
+const how=x=>{const d=dist(x);return d<=650?`走路約 ${Math.max(2,Math.round(d*1.3/75))} 分`:`騎車約 ${Math.round(d*1.35/350+3)} 分`};
+const score=x=>(x.v/(x.v+500))*x.r+(500/(x.v+500))*4.4;
+const skipOf=m=>new Set(LS.get("zb_skip",[]));
+function pickFor(m,avoid){const sk=skipOf(m),c=S[m].filter(x=>x.h[dow]&&!sk.has(x.id)&&!avoid.has(x.id));if(!c.length)return null;
+ const w=c.map(x=>Math.pow(Math.max(.08,score(x)-4),3)*(dist(x)<=650?1.4:1));let t=Math.random()*w.reduce((a,b)=>a+b,0);for(let i=0;i<c.length;i++){t-=w[i];if(t<=0)return c[i]}return c[0]}
+const planOf=m=>{const p=LS.get("zb"+m+"_plan_"+MK,null),c=LS.get("zb"+m+"_custom_"+MK,{});return{...(p||{}),...c}};
+function setToday(m,id){const k="zb"+m+"_custom_"+MK,c=LS.get(k,{});c[today]=id;LS.set(k,c);const pk="zb"+m+"_plan_"+MK,p=LS.get(pk,null);if(p){p[today]=id;LS.set(pk,p)}}
+function ensureToday(){const used=new Set();["b","l","d"].forEach(m=>{let id=planOf(m)[today];if(!id||!S[m].some(x=>x.id==id)){const x=pickFor(m,used);if(x){setToday(m,x.id);id=x.id}}if(id)used.add(id)})}
+const byId=(m,id)=>S[m].find(x=>x.id==id);
+function nowMeal(){const mm=now.getHours()*60+now.getMinutes();return mm<MEALS.b.t[1]?"b":mm<MEALS.l.t[1]?"l":"d"}
+function render(anim){const nm=nowMeal();
+ $("#meals").innerHTML=["b","l","d"].map(m=>{const x=byId(m,planOf(m)[today]),M=MEALS[m];return `<a class="card meal ${m==nm?"cur":""} ${anim?"pop":""}" href="${M.f}#days"><span class="em">${M.e}</span><div><small>今天${M.n}${m==nm?"・現在":""}</small><b>${x?esc(x.n):"今天沒有有開的店"}</b>${x?`<small>${esc(x.c)}・⭐${x.r}・${how(x)}・${x.h[dow]}</small>${x.d.length?`<small>🍽 評論常提到：${x.d.map(esc).join("、")}</small>`:""}`:""}</div><span class="go">›</span></a>`}).join("");
+ const x=byId(nm,planOf(nm)[today]),M=MEALS[nm];
+ $("#nowCard").innerHTML=`<span class="em">${M.e}</span><div><small>現在是${M.n}時間</small><b>${x?"就吃 "+esc(x.n)+"？":"去看看有什麼吃"}</b><small>${x?esc(x.c)+"・"+how(x):""}</small></div><a class="sbtn y" href="${M.f}">去${M.n}頁 ›</a>`;
+ $("#wk").innerHTML=`<table><thead><tr><th></th>${["b","l","d"].map(m=>`<th>${MEALS[m].e} ${MEALS[m].n}</th>`).join("")}</tr></thead><tbody>${week.map(w=>`<tr class="${w.key==today?"td":""}"><th>${w.label}<small>週${DAYS[w.i]}</small></th>${["b","l","d"].map(m=>{const x=byId(m,planOf(m)[w.key]);return `<td><a href="${MEALS[m].f}#days">${x?esc(x.n):"<span class=\"emp\">＋ 去排</span>"}</a></td>`}).join("")}</tr>`).join("")}</tbody></table>`;}
+const toast=s=>{const t=$("#toast");t.textContent=s;t.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("show"),2200)};
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+$("#roll").onclick=()=>{const b=$("#roll");b.disabled=true;let n=reduce?1:10;const step=()=>{const used=new Set();["b","l","d"].forEach(m=>{const x=pickFor(m,used);if(x){used.add(x.id);setToday(m,x.id)}});render(n==1);if(--n>0)setTimeout(step,70+(10-n)*15);else{b.disabled=false;toast("今天三餐換好了，各餐頁面也同步更新 ✔")}};step()};
+ensureToday();render(false);
+// views
+(async()=>{const live=/github\.io$/.test(location.hostname),CNT="https://abacus.jasoncameron.dev/",NS="dagronkimo-zhubei-food",fresh=Date.now()-LS.get("zb_lastview",0)>30*60e3,dk="d"+today.replace(/-/g,"");
+ const call=(op,k)=>fetch(CNT+op+"/"+NS+"/"+k,{cache:"no-store"}).then(r=>r.ok?r.json():r.status==404?{value:0}:Promise.reject(r.status)).then(j=>+j.value||0);
+ try{const op=live&&fresh?"hit":"get";const [a,d]=await Promise.all([call(op,"views"),call(op,dk)]);if(live&&fresh)LS.set("zb_lastview",Date.now());$("#vwAll").textContent=a.toLocaleString();$("#vwDay").textContent=d.toLocaleString();$("#views").hidden=false}catch(e){}})();
+if("serviceWorker" in navigator&&location.protocol=="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body></html>

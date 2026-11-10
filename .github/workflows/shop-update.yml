@@ -1,0 +1,47 @@
+name: 店家名單更新
+on:
+  issues:
+    types: [opened, labeled]
+permissions:
+  contents: write
+  issues: write
+  pages: write
+jobs:
+  apply:
+    # 只處理標題含「店家更新」的單；Vito 本人開的直接套用，其他人開的要 Vito 加上 approve 標籤才套用
+    if: >-
+      contains(github.event.issue.title, '店家更新') &&
+      ((github.event.action == 'opened' && github.event.issue.user.login == github.repository_owner) ||
+       (github.event.action == 'labeled' && github.event.label.name == 'approve'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 套用更新
+        env:
+          BODY: ${{ github.event.issue.body }}
+        run: |
+          printf '%s' "$BODY" > /tmp/body.md
+          python3 tools/apply_update.py /tmp/body.md
+      - name: 提交並發布
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUM: ${{ github.event.issue.number }}
+        run: |
+          git config user.name "zhubei-food-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add shops_b.json shops_l.json shops_d.json
+          if git diff --cached --quiet; then
+            gh issue close "$NUM" -c "沒有需要變更的內容。"
+            exit 0
+          fi
+          git commit -m "店家名單更新 #$NUM"
+          git push
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" || true
+          gh issue close "$NUM" -c "✅ 已更新店家名單，約 1–2 分鐘後重新整理網頁就看得到：
+          $(cat apply_log.txt)"
+      - name: 失敗通知
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUM: ${{ github.event.issue.number }}
+        run: gh issue comment "$NUM" -b "⚠️ 更新失敗，請到 Actions 看錯誤訊息，或把這張單的內容貼給 Claude 處理。"
