@@ -27,8 +27,8 @@ html{scroll-behavior:smooth}
 body{background:var(--paper);color:var(--ink);font-family:"Huninn",system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
 a{color:inherit}button{font-family:inherit;color:var(--ink)}
 .wrap{max-width:560px;margin:0 auto;padding:0 16px}
-main.wrap{padding-top:calc(64px + env(safe-area-inset-top))}
-section{scroll-margin-top:76px;padding:26px 0 6px}
+main.wrap{padding-top:4px}
+section{scroll-margin-top:calc(var(--navh,96px) + 10px);padding:26px 0 6px}
 h2{font-size:1.32rem;font-weight:400;display:flex;align-items:center;gap:10px;margin-bottom:12px}
 h2 .dot{width:18px;height:18px;border:var(--line);border-radius:50%;flex:none}
 h3{font-weight:400}
@@ -37,12 +37,12 @@ h3{font-weight:400}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 /* nav */
-.nav{position:fixed;inset:0 0 auto 0;z-index:1000;background:var(--paper);border-bottom:var(--line);padding-top:env(safe-area-inset-top)}
-.nav .in{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:8px;padding:8px 12px;overflow-x:auto;scrollbar-width:none}
+.nav{position:sticky;top:0;z-index:1000;background:var(--paper);border-bottom:var(--line);padding-top:env(safe-area-inset-top)}
+.nav .in{max-width:560px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 12px}
 .nav .in::-webkit-scrollbar{display:none}
-.logo{font-size:1.02rem;white-space:nowrap;display:flex;align-items:center;gap:6px;margin-right:4px}
+.logo{font-size:1.02rem;white-space:nowrap;display:flex;align-items:center;gap:6px;margin-right:2px}
 .logo svg{width:30px;height:30px}
-.nav a.lk{flex:none;text-decoration:none;font-size:.9rem;padding:4px 12px;border:var(--line);border-radius:999px;background:var(--white)}
+.nav a.lk{flex:none;text-decoration:none;font-size:.86rem;padding:3px 10px;border:var(--line);border-radius:999px;background:var(--white)}
 .nav a.lk.on{background:var(--yellow)}
 a:focus-visible,button:focus-visible,input:focus-visible+span,select:focus-visible{outline:3px dashed var(--ink);outline-offset:3px}
 
@@ -91,10 +91,10 @@ a:focus-visible,button:focus-visible,input:focus-visible+span,select:focus-visib
 .res .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 
 /* days */
-.tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 12px;scrollbar-width:none}
+.tabs{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;padding:4px 0 12px}
 .tabs::-webkit-scrollbar{display:none}
-.tab{flex:none;background:var(--white);border:var(--line);border-radius:18px;padding:6px 10px;text-align:center;cursor:pointer;min-width:62px;box-shadow:0 3px 0 var(--ink)}
-.tab b{display:block;font-weight:400;font-size:1.08rem;line-height:1.2}
+.tab{background:var(--white);border:var(--line);border-radius:14px;padding:5px 0;text-align:center;cursor:pointer;min-width:0;box-shadow:0 3px 0 var(--ink)}
+.tab b{display:block;font-weight:400;font-size:.95rem;line-height:1.2}
 .tab small{font-size:.74rem}
 .tab[aria-selected="true"]{background:var(--coral);transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
 .tab.today small::after{content:"・今天"}
@@ -1018,5 +1018,6 @@ $$("#lview .pill").forEach(p=>p.setAttribute("aria-pressed",p.dataset.v==lview))
 setInterval(()=>{if(!$("#sheetBg").classList.contains("show")){todayCard();renderList()}},60000);
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
+<script>(()=>{const n=document.querySelector(".nav"),f=()=>document.documentElement.style.setProperty("--navh",n.offsetHeight+"px");f();addEventListener("resize",f);addEventListener("load",f)})()</script>
 </body>
 </html>
